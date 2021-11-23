@@ -8,38 +8,50 @@
 #include <strutil.h>
 
 #include "compressor/Compressor.h"
+#include "compressor/CompResult.h"
 #include "compressor/CCC.h"
+#include "compressor/FPC.h"
+#include "compressor/BDI.h"
+#include "compressor/CPACK.h"
+
 #include "loader/LoaderGPGPU.h"
 #include "loader/LoaderNPY.h"
 
-comp::CCCResult compressLines(comp::Compressor *compressor, trace::Loader *loader);
-std::string parseConfig(const std::string &configPath);
+comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loader);
 
 int main(int argc, char **argv)
 {
+  std::string algorithm;
   std::string tracePath;
   std::string configPath;
   std::string outputDirPath;
   
   // parse arguments
-  cxxopts::Options options("compressor");
+  {
+  cxxopts::Options options("Compressor");
 
   options.add_options()
-    ("i,input",     "Input GPGPU-Sim trace file path (.log)", cxxopts::value<std::string>())
-    ("c,config",    "Config file path (.json)", cxxopts::value<std::string>())
+    ("a,algorithm", "Compression algorithm [CCC/FPC/BDI/CPACK]. Default=CCC", cxxopts::value<std::string>())
+    ("i,input",     "Input GPGPU-Sim trace file path. Supported extensions: .log, .npy", cxxopts::value<std::string>())
+    ("c,config",    "Config file path (.json).", cxxopts::value<std::string>())
     ("o,output",    "Output directory path", cxxopts::value<std::string>())
     ("h,help",      "Print usage");
   auto args = options.parse(argc, argv);
 
   int help = args.count("help");
+  if (args.count("algorithm"))
+    algorithm = args["algorithm"].as<std::string>();
+  else
+    algorithm = "CCC";
   if (args.count("input"))
     tracePath = args["input"].as<std::string>();
   else
     help = 1;
-  if (args.count("config"))
-    configPath = args["config"].as<std::string>();
-  else
-    help = 1;
+  if (algorithm == "CCC")
+    if (args.count("config"))
+      configPath = args["config"].as<std::string>();
+    else
+      help = 1;
   if (args.count("output"))
     outputDirPath = args["output"].as<std::string>();
   else
@@ -50,6 +62,7 @@ int main(int argc, char **argv)
   {
     std::cout << options.help() << std::endl;
     exit(0);
+  }
   }
 
   // instantiates loader
@@ -63,66 +76,84 @@ int main(int argc, char **argv)
 
   // instantiates compressor
   comp::Compressor *compressor;
-  std::string compressorName;
-  int numCompModules;
-
-  compressor = new comp::CCC(configPath);
-  compressorName = compressor->GetCompressorName();
-  numCompModules = static_cast<comp::CCC*>(compressor)->GetNumModules();
+  if (algorithm == "CCC")
+    compressor = new comp::CCC(configPath);
+  else if (algorithm == "FPC")
+    compressor = new comp::FPC();
+  else if (algorithm == "BDI")
+    compressor = new comp::BDI();
+  else if (algorithm == "CPACK")
+    compressor = new comp::CPACK();
 
   // results file
-  std::string saveFileName = parseConfig(configPath);
+  std::string saveFileName;
+  if (algorithm == "CCC")
+    saveFileName = parseConfig(configPath);
+  else
+    saveFileName = algorithm;
   std::string compOutputSavePath = outputDirPath + fmt::format("/{}_results.csv", saveFileName);;
   std::string compDetailedOutputSavePath = outputDirPath + fmt::format("/{}_results_detail.csv", saveFileName);
 
   // compress
-  comp::CCCResult compStat = compressLines(compressor, loader);
+  comp::CompResult *compStat = compressLines(compressor, loader);
 
   // print
-  std::cout << fmt::format("compratio: {}", compStat.CompRatio) << std::endl;
-  compStat.Print(tracePath, compOutputSavePath);
-  compStat.PrintHistogram(tracePath, compDetailedOutputSavePath);
+  std::string workloadName;
+  {
+    std::vector<std::string> splitTracePath = strutil::split(tracePath, "/");
+    workloadName = splitTracePath[splitTracePath.size() - 1];
+    strutil::replace_all(workloadName, ".npy", "");
+  }
+  std::cout << fmt::format("comp.ratio: {}", compStat->CompRatio) << std::endl;
+
+  if (algorithm == "CCC")
+  {
+    comp::CCCResult *stat = static_cast<comp::CCCResult*>(compStat);
+    stat->Print(workloadName, compOutputSavePath);
+    stat->PrintDetail(workloadName, compDetailedOutputSavePath);
+  }
+  else if (algorithm == "FPC")
+  {
+    comp::FPCResult *stat = static_cast<comp::FPCResult*>(compStat);
+    stat->Print(workloadName, compOutputSavePath);
+    stat->PrintDetail(workloadName, compDetailedOutputSavePath);
+  }
+  else if (algorithm == "BDI")
+  {
+    comp::BDIResult *stat = static_cast<comp::BDIResult*>(compStat);
+    stat->Print(workloadName, compOutputSavePath);
+    stat->PrintDetail(workloadName, compDetailedOutputSavePath);
+  }
+  else 
+  {
+    compStat->Print(workloadName, compOutputSavePath);
+    compStat->PrintDetail(workloadName, compDetailedOutputSavePath);
+  }
 
   delete loader;
   delete compressor;
   return 0;
 }
 
-comp::CCCResult compressLines(comp::Compressor *compressor, trace::Loader *loader)
+comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loader)
 {
-  // init MemReqGPU_t
-  trace::MemReq_t *memReq = new trace::MemReqGPU_t;
+  // check which loader is passed,
+  // and init MemReq_t
+  trace::MemReq_t *memReq;
+  if (dynamic_cast<trace::LoaderGPGPU*>(loader) != nullptr)
+    memReq = new trace::MemReqGPU_t;
+  else if (dynamic_cast<trace::LoaderNPY*>(loader) != nullptr)
+    memReq = new trace::MemReq_t;
 
   // compress
   while (1)
   {
-    memReq = static_cast<trace::MemReqGPU_t*>(loader->GetLine(memReq));
+    memReq = loader->GetLine(memReq);
     if (memReq->isEnd) break;
-    if (static_cast<trace::MemReqGPU_t*>(memReq)->reqType == trace::GLOBAL_ACC_R
-        || static_cast<trace::MemReqGPU_t*>(memReq)->reqType == trace::GLOBAL_ACC_W)
-    {
-      std::vector<uint8_t> &dataLine = memReq->data;
-      compressor->CompressLine(dataLine);
-    }
+    std::vector<uint8_t> &dataLine = memReq->data;
+    compressor->CompressLine(dataLine);
   }
-  comp::CCCResult &CCCstat = static_cast<comp::CCC*>(compressor)->m_Stat;
 
-  return CCCstat;
+  comp::CompResult *compStat = compressor->GetResult();
+  return compStat;
 }
-
-std::string parseConfig(const std::string &configPath)
-{
-  std::vector<std::string> parsedBySlash = strutil::split(configPath, "/");
-//  std::vector<std::string> parsedBySlash = (configPath, "/");
-
-  std::string cfgFileName = parsedBySlash[parsedBySlash.size() - 1];
-  if (!strutil::replace_all(cfgFileName, ".json", ""))
-  {
-    fmt::print("String parsing have failed!\n");
-    exit(1);
-  }
-//  std::string parsedString = eraseSubString(cfgFileName, ".json");
-
-  return cfgFileName;
-}
-

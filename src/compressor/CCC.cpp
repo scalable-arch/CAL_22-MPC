@@ -32,7 +32,7 @@ unsigned CCC::CompressLine(std::vector<uint8_t> &dataLine)
     if (compressedSize == 0) 
     {
       compressedLineSize = m_EncodingBits[chosenCompModule];
-      m_Stat.Update(uncompressedLineSize, compressedLineSize, 0);
+      static_cast<CCCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, 0);
       return compressedLineSize;
     }
   }
@@ -76,7 +76,7 @@ unsigned CCC::CompressLine(std::vector<uint8_t> &dataLine)
   compressedLineSize += m_EncodingBits[chosenCompModule];
 
   // update compression stat
-  m_Stat.Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
+  static_cast<CCCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
 
   return compressedLineSize;
 }
@@ -336,7 +336,7 @@ void CCC::parseConfig(std::string &configPath)
       m_CompModules[i] = compModule;
     }
   }
-  m_Stat.SetNumModules(m_NumModules);
+  static_cast<CCCResult*>(m_Stat)->SetNumModules(m_NumModules);
 }
 
 }

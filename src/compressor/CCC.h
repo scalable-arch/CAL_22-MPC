@@ -1,10 +1,12 @@
-#pragma once
+#ifndef __CCC_H__
+#define __CCC_H__
 
 #include <ios>
 #include <map>
 
 #include "../utils.h"
 #include "./Compressor.h"
+#include "./CompResult.h"
 #include "./CCCmodules/CompressionModule.h"
 #include "./CCCmodules/FPCModule.h"
 
@@ -124,7 +126,7 @@ struct CCCResult : public CompResult
       file.close();
   }
 
-  void PrintHistogram(std::string workloadName = "", std::string filePath = "")
+  virtual void PrintDetail(std::string workloadName = "", std::string filePath = "")
   {
     // select file or stdout
     std::streambuf *buff;
@@ -212,8 +214,9 @@ public:
   /*** constructors ***/
   CCC(std::string configPath)
   {
+    m_Stat = new CCCResult();
     m_CompName = "Contrastive Clustering Compressor";
-    m_Stat.CompressorName = m_CompName;
+    m_Stat->CompressorName = m_CompName;
     parseConfig(configPath);
   }
 
@@ -237,9 +240,8 @@ private:
   FPCModule m_CommonEncoder;
   int m_NumModules;
   int m_NumClusters;
-
-public:
-  CCCResult m_Stat;
 };
 
 }
+
+#endif  // __CCC_H__

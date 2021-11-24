@@ -3,7 +3,6 @@
 
 #include "Compressor.h"
 #include "CompResult.h"
-#include "../utils.h"
 
 #define PREFIX_SIZE 3
 

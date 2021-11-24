@@ -7,6 +7,8 @@
 
 #include <fmt/core.h>
 
+#include "../utils.h"
+
 namespace comp
 {
 
@@ -33,18 +35,29 @@ struct CompResult
     }
     else
     {
-      file.open(filePath, std::ios_base::app);
-      if (!file.is_open())
+      // write column index description
+      if (!isFileExists(filePath))
       {
-        std::cout << fmt::format("File is not open: \"{}\"", filePath) << std::endl;
-        exit(1);
+        file.open(filePath);
+        if (!file.is_open())
+        {
+          std::cout << fmt::format("File is not open: \"{}\"", filePath) << std::endl;
+          exit(1);
+        }
+        // first line
+        file << "workload,original_size,compressed_size,compression_ratio,";
+        file << std::endl;
+        file.close();
       }
+      file.open(filePath, std::ios_base::app);
       buff = file.rdbuf();
     }
     std::ostream stream(buff);
 
+    // print result
     // workloadname, originalsize, compressedsize, compratio
-    stream << fmt::format("{0},{1},{2},{3},", workloadName, OriginalSize, CompressedSize, CompRatio) << std::endl;
+    stream << fmt::format("{0},{1},{2},{3},", workloadName, OriginalSize, CompressedSize, CompRatio);
+    stream << std::endl;
 
     if (file.is_open())
       file.close();

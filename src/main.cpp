@@ -126,8 +126,9 @@ int main(int argc, char **argv)
   }
   else 
   {
-    compStat->Print(workloadName, compOutputSavePath);
-    compStat->PrintDetail(workloadName, compDetailedOutputSavePath);
+		comp::CompResult *stat = compStat;
+    stat->Print(workloadName, compOutputSavePath);
+    stat->PrintDetail(workloadName, compDetailedOutputSavePath);
   }
 
   delete loader;

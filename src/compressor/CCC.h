@@ -4,7 +4,6 @@
 #include <ios>
 #include <map>
 
-#include "../utils.h"
 #include "./Compressor.h"
 #include "./CompResult.h"
 #include "./CCCmodules/CompressionModule.h"

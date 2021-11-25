@@ -1,24 +1,24 @@
 #include <cmath>
 
 #include <json/json.h>
-#include "CCC.h"
-#include "CCCmodules/AllWordSameModule.h"
-#include "CCCmodules/AllZeroModule.h"
-#include "CCCmodules/BitplaneModule.h"
-#include "CCCmodules/CompressionModule.h"
-#include "CCCmodules/FPCModule.h"
-#include "CCCmodules/PatternModule.h"
-#include "CCCmodules/PredCompModule.h"
-#include "CCCmodules/PredictorModule.h"
-#include "CCCmodules/ResidueModule.h"
-#include "CCCmodules/ScanModule.h"
-#include "CCCmodules/XORModule.h"
-#include "CCCmodules/CompStruct.h"
+#include "VPC.h"
+#include "VPCmodules/AllWordSameModule.h"
+#include "VPCmodules/AllZeroModule.h"
+#include "VPCmodules/BitplaneModule.h"
+#include "VPCmodules/CompressionModule.h"
+#include "VPCmodules/FPCModule.h"
+#include "VPCmodules/PatternModule.h"
+#include "VPCmodules/PredCompModule.h"
+#include "VPCmodules/PredictorModule.h"
+#include "VPCmodules/ResidueModule.h"
+#include "VPCmodules/ScanModule.h"
+#include "VPCmodules/XORModule.h"
+#include "VPCmodules/CompStruct.h"
 
 namespace comp
 {
 
-unsigned CCC::CompressLine(std::vector<uint8_t> &dataLine)
+unsigned VPC::CompressLine(std::vector<uint8_t> &dataLine)
 {
   int chosenCompModule = -1;
   const unsigned uncompressedLineSize = dataLine.size() * BYTE;
@@ -32,7 +32,7 @@ unsigned CCC::CompressLine(std::vector<uint8_t> &dataLine)
     if (compressedSize == 0) 
     {
       compressedLineSize = m_EncodingBits[chosenCompModule];
-      static_cast<CCCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, 0);
+      static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, 0);
       return compressedLineSize;
     }
   }
@@ -76,12 +76,12 @@ unsigned CCC::CompressLine(std::vector<uint8_t> &dataLine)
   compressedLineSize += m_EncodingBits[chosenCompModule];
 
   // update compression stat
-  static_cast<CCCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
+  static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
 
   return compressedLineSize;
 }
 
-void CCC::parseConfig(std::string &configPath)
+void VPC::parseConfig(std::string &configPath)
 {
   // open config file
   std::ifstream configFile;
@@ -336,7 +336,7 @@ void CCC::parseConfig(std::string &configPath)
       m_CompModules[i] = compModule;
     }
   }
-  static_cast<CCCResult*>(m_Stat)->SetNumModules(m_NumModules);
+  static_cast<VPCResult*>(m_Stat)->SetNumModules(m_NumModules);
 }
 
 }

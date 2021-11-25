@@ -1,13 +1,13 @@
-#ifndef __CCC_H__
-#define __CCC_H__
+#ifndef __VPC_H__
+#define __VPC_H__
 
 #include <ios>
 #include <map>
 
 #include "./Compressor.h"
 #include "./CompResult.h"
-#include "./CCCmodules/CompressionModule.h"
-#include "./CCCmodules/FPCModule.h"
+#include "./VPCmodules/CompressionModule.h"
+#include "./VPCmodules/FPCModule.h"
 
 namespace comp
 {
@@ -30,13 +30,13 @@ struct ClusterStat
   std::map<int, uint64_t> compSizeHistogram;
 };
 
-struct CCCResult : public CompResult
+struct VPCResult : public CompResult
 {
   /*** constructors ***/
-  CCCResult()
+  VPCResult()
     : CompResult(), m_NumModules(0), m_UncompCount(0) {}
   
-  CCCResult(int numModules)
+  VPCResult(int numModules)
     : CompResult(), m_NumModules(numModules), m_UncompCount(0) 
   {
     SetNumModules(numModules);
@@ -207,13 +207,13 @@ struct CCCResult : public CompResult
 
 };
 
-class CCC : public Compressor
+class VPC : public Compressor
 {
 public:
   /*** constructors ***/
-  CCC(std::string configPath)
+  VPC(std::string configPath)
   {
-    m_Stat = new CCCResult();
+    m_Stat = new VPCResult();
     m_CompName = "Contrastive Clustering Compressor";
     m_Stat->CompressorName = m_CompName;
     parseConfig(configPath);
@@ -243,4 +243,4 @@ private:
 
 }
 
-#endif  // __CCC_H__
+#endif  // __VPC_H__

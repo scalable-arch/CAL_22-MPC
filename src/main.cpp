@@ -9,7 +9,7 @@
 
 #include "compressor/Compressor.h"
 #include "compressor/CompResult.h"
-#include "compressor/CCC.h"
+#include "compressor/VPC.h"
 #include "compressor/FPC.h"
 #include "compressor/BDI.h"
 #include "compressor/CPACK.h"
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
   cxxopts::Options options("Compressor");
 
   options.add_options()
-    ("a,algorithm", "Compression algorithm [CCC/FPC/BDI/CPACK]. Default=CCC", cxxopts::value<std::string>())
+    ("a,algorithm", "Compression algorithm [VPC/FPC/BDI/CPACK]. Default=VPC", cxxopts::value<std::string>())
     ("i,input",     "Input GPGPU-Sim trace file path. Supported extensions: .log, .npy", cxxopts::value<std::string>())
     ("c,config",    "Config file path (.json).", cxxopts::value<std::string>())
     ("o,output",    "Output directory path", cxxopts::value<std::string>())
@@ -42,12 +42,12 @@ int main(int argc, char **argv)
   if (args.count("algorithm"))
     algorithm = args["algorithm"].as<std::string>();
   else
-    algorithm = "CCC";
+    algorithm = "VPC";
   if (args.count("input"))
     tracePath = args["input"].as<std::string>();
   else
     help = 1;
-  if (algorithm == "CCC")
+  if (algorithm == "VPC")
     if (args.count("config"))
       configPath = args["config"].as<std::string>();
     else
@@ -76,8 +76,8 @@ int main(int argc, char **argv)
 
   // instantiates compressor
   comp::Compressor *compressor;
-  if (algorithm == "CCC")
-    compressor = new comp::CCC(configPath);
+  if (algorithm == "VPC")
+    compressor = new comp::VPC(configPath);
   else if (algorithm == "FPC")
     compressor = new comp::FPC();
   else if (algorithm == "BDI")
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 
   // results file
   std::string saveFileName;
-  if (algorithm == "CCC")
+  if (algorithm == "VPC")
     saveFileName = parseConfig(configPath);
   else
     saveFileName = algorithm;
@@ -106,9 +106,9 @@ int main(int argc, char **argv)
   }
   std::cout << fmt::format("comp.ratio: {}", compStat->CompRatio) << std::endl;
 
-  if (algorithm == "CCC")
+  if (algorithm == "VPC")
   {
-    comp::CCCResult *stat = static_cast<comp::CCCResult*>(compStat);
+    comp::VPCResult *stat = static_cast<comp::VPCResult*>(compStat);
     stat->Print(workloadName, compOutputSavePath);
     stat->PrintDetail(workloadName, compDetailedOutputSavePath);
   }

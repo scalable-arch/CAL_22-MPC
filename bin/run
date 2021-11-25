@@ -13,6 +13,10 @@ cmd="./compressor"
 
 for split in train val test; do
   for dataset in $dataset_dir/$split/*set.npy; do
-    $cmd -a $1 -i $dataset -c $config -o $output_dir/$split/
+    if [ "$config" == "" ]; then
+      "$cmd -a $algorithm -i $dataset -o $output_dir/$split/"
+    else
+      "$cmd -a $algorithm -i $dataset -c $config -o $output_dir/$split/"
+    fi
   done
 done

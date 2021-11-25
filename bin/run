@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if !([ "$#" == 3 ] || [ "$#" == 4 ]); then
+  echo "Usage: run algorithm dataset_dir output_dir [config]"
+  exit 1
+fi
+
+algorithm=$1
+dataset_dir=$2
+output_dir=$3
+config=$4
+cmd="./compressor"
+
+for split in train val test; do
+  for dataset in $dataset_dir/$split/*set.npy; do
+    $cmd -a $1 -i $dataset -c $config -o $output_dir/$split/
+  done
+done

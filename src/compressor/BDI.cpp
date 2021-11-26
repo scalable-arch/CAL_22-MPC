@@ -8,7 +8,7 @@ unsigned BDI::CompressLine(std::vector<uint8_t> &dataLine)
   const unsigned lineSize = dataLine.size();
   const unsigned uncompressedSize = BYTE * lineSize;
 
-  BDIState select = Uncompressed;
+  BDIState select = BDIState::Uncompressed;
 
   unsigned bestCSize, currCSize;
   currCSize = uncompressedSize;
@@ -17,53 +17,53 @@ unsigned BDI::CompressLine(std::vector<uint8_t> &dataLine)
   if(isZeros(dataLine))
   {
     bestCSize = BYTE;
-    select = Zeros;
+    select = BDIState::Zeros;
   }
   else if(isRepeated(dataLine, 8))
   {
     bestCSize = BYTE * 8;
-    select = Repeat;
+    select = BDIState::Repeat;
   }
   else
   {
     // base8-delta1
     // bestcase[32B / 64B] : (8+3)Bytes+4bits / (8+7)Bytes+8bits
     currCSize = checkBDI(dataLine, 8, 1);
-    select = bestCSize > currCSize ? Base8Delta1 : select;
+    select = bestCSize > currCSize ? BDIState::Base8Delta1 : select;
     bestCSize = bestCSize > currCSize ? currCSize : bestCSize;
 
     // base8-delta2
     // bestcase[32B / 64B] : (8+6)Bytes+4bits / (8+14)Bytes+8bits
     currCSize = checkBDI(dataLine, 8, 2);
-    select = bestCSize > currCSize ? Base8Delta2 : select;
+    select = bestCSize > currCSize ? BDIState::Base8Delta2 : select;
     bestCSize = bestCSize > currCSize ? currCSize : bestCSize;
 
     // base8-delta4
     // bestcase[32B / 64B] : (8+12)Bytes+4bits / (8+28)Bytes+8bits
     currCSize = checkBDI(dataLine, 8, 4);
-    select = bestCSize > currCSize ? Base8Delta4 : select;
+    select = bestCSize > currCSize ? BDIState::Base8Delta4 : select;
     bestCSize = bestCSize > currCSize ? currCSize : bestCSize;
 
     // base4-delta1
     // bestcase[32B / 64B] : (4+7)Bytes+8bits / (4+15)Bytes+16bits
     currCSize = checkBDI(dataLine, 4, 1);
-    select = bestCSize > currCSize ? Base4Delta1 : select;
+    select = bestCSize > currCSize ? BDIState::Base4Delta1 : select;
     bestCSize = bestCSize > currCSize ? currCSize : bestCSize;
 
     // base4-delta2
     // bestcase[32B / 64B] : (4+14)Bytes+8bits / (4+30)Bytes+16bits
     currCSize = checkBDI(dataLine, 4, 2);
-    select = bestCSize > currCSize ? Base4Delta2 : select;
+    select = bestCSize > currCSize ? BDIState::Base4Delta2 : select;
     bestCSize = bestCSize > currCSize ? currCSize : bestCSize;
 
     // base2-delta1
     // bestcase[32B / 64B] : (2+15)Bytes+16bits / (2+31)Bytes+32bits
     currCSize = checkBDI(dataLine, 2, 1);
-    select = bestCSize > currCSize ? Base2Delta1 : select;
+    select = bestCSize > currCSize ? BDIState::Base2Delta1 : select;
     bestCSize = bestCSize > currCSize ? currCSize : bestCSize;
 
     // incompressible
-    select = (bestCSize == uncompressedSize) ? Uncompressed : select;
+    select = (bestCSize == uncompressedSize) ? BDIState::Uncompressed : select;
 
   }
 

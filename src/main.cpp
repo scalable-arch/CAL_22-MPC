@@ -7,12 +7,11 @@
 #include <cxxopts.hpp>
 #include <strutil.h>
 
-#include "compressor/Compressor.h"
-#include "compressor/CompResult.h"
 #include "compressor/VPC.h"
 #include "compressor/FPC.h"
 #include "compressor/BDI.h"
 #include "compressor/CPACK.h"
+#include "compressor/Pattern.h"
 
 #include "loader/LoaderGPGPU.h"
 #include "loader/LoaderNPY.h"
@@ -31,7 +30,7 @@ int main(int argc, char **argv)
   cxxopts::Options options("Compressor");
 
   options.add_options()
-    ("a,algorithm", "Compression algorithm [VPC/FPC/BDI/CPACK]. Default=VPC", cxxopts::value<std::string>())
+    ("a,algorithm", "Compression algorithm [VPC/FPC/BDI/CPACK/PATTERN]. Default=VPC", cxxopts::value<std::string>())
     ("i,input",     "Input GPGPU-Sim trace file path. Supported extensions: .log, .npy", cxxopts::value<std::string>())
     ("c,config",    "Config file path (.json).", cxxopts::value<std::string>())
     ("o,output",    "Output directory path", cxxopts::value<std::string>())
@@ -84,6 +83,10 @@ int main(int argc, char **argv)
     compressor = new comp::BDI();
   else if (algorithm == "CPACK")
     compressor = new comp::CPACK();
+  else if (algorithm == "PATTERN")
+    compressor = new comp::Pattern();
+  else
+    assert(false && "Invalid name of algorithm.");
 
   // results file
   std::string saveFileName;
@@ -121,6 +124,12 @@ int main(int argc, char **argv)
   else if (algorithm == "BDI")
   {
     comp::BDIResult *stat = static_cast<comp::BDIResult*>(compStat);
+    stat->Print(workloadName, compOutputSavePath);
+    stat->PrintDetail(workloadName, compDetailedOutputSavePath);
+  }
+  else if (algorithm == "PATTERN")
+  {
+    comp::PatternResult *stat = static_cast<comp::PatternResult*>(compStat);
     stat->Print(workloadName, compOutputSavePath);
     stat->PrintDetail(workloadName, compDetailedOutputSavePath);
   }

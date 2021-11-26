@@ -7,7 +7,7 @@
 namespace comp
 {
 
-enum BDIState
+enum class BDIState
 {
   Zeros = 0,
   Repeat = 1,

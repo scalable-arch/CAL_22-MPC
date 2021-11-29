@@ -15,12 +15,15 @@
 #include "VPCmodules/XORModule.h"
 #include "VPCmodules/CompStruct.h"
 
-#define NUM_STARTING_MODULE 2
-
 namespace comp
 {
 
 unsigned VPC::CompressLine(std::vector<uint8_t> &dataLine)
+{
+  return (this->*compressLine)(dataLine);
+}
+
+unsigned VPC::compressLineAllWordSame(std::vector<uint8_t> &dataLine)
 {
   int chosenCompModule = -1;
   const unsigned uncompressedLineSize = dataLine.size() * BYTE;
@@ -58,7 +61,73 @@ unsigned VPC::CompressLine(std::vector<uint8_t> &dataLine)
   {
     int numMaxScannedZRL = 0;
     Binary maxScanned;
-    for (int i = NUM_STARTING_MODULE; i < m_NumModules; i++)
+    for (int i = 2; i < m_NumModules; i++)
+    {
+      PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[i]);
+      Binary scanned = predCompModule->CompressLine(dataLine, 0);
+
+      // count zrl
+      int numScannedZRL = 0;
+      for (int row = 0; row <scanned.GetRowSize(); row++)
+      {
+        if (scanned.IsRowZeros(row))
+          numScannedZRL++;
+        else
+          break;
+      }
+
+      if (numMaxScannedZRL <= numScannedZRL)
+      {
+        chosenCompModule = i;
+        numMaxScannedZRL = numScannedZRL;
+        maxScanned = scanned;
+      }
+    }
+
+    int compressedSize = m_CommonEncoder.ProcessLine(maxScanned);
+    if (compressedSize < uncompressedLineSize)
+    {
+      compressedLineSize = compressedSize;
+    }
+    else
+    {
+      chosenCompModule = -1;
+      compressedLineSize = uncompressedLineSize;
+    }
+    compressedLineSize += m_EncodingBits[chosenCompModule];
+
+    // update compression stat
+    static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
+
+    return compressedLineSize;
+  }
+}
+
+unsigned VPC::compressLineOnlyAllZero(std::vector<uint8_t> &dataLine)
+{
+  int chosenCompModule = -1;
+  const unsigned uncompressedLineSize = dataLine.size() * BYTE;
+  unsigned compressedLineSize = uncompressedLineSize;
+
+  // Check ALLZERO
+  {
+    AllZeroModule *allZeroModule = static_cast<AllZeroModule*>(m_CompModules[0]);
+    unsigned compressedSize = allZeroModule->CompressLine(dataLine);
+
+    if (compressedSize == 0) 
+    {
+      chosenCompModule = 0;
+      compressedLineSize = m_EncodingBits[chosenCompModule];
+      static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
+      return compressedLineSize;
+    }
+  }
+
+  // Check other patterns
+  {
+    int numMaxScannedZRL = 0;
+    Binary maxScanned;
+    for (int i = 1; i < m_NumModules; i++)
     {
       PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[i]);
       Binary scanned = predCompModule->CompressLine(dataLine, 0);
@@ -340,11 +409,13 @@ void VPC::parseConfig(std::string &configPath)
       {
         // AllZeroModule
         compModule = new AllZeroModule(m_LineSize);
+        (this->compressLine) = &VPC::compressLineOnlyAllZero;
       }
       else if (moduleName == "ByteplaneAllSame" || moduleName == "AllWordSame")
       {
         // AllWordSameModule
         compModule = new AllWordSameModule(m_LineSize);
+        (this->compressLine) = &VPC::compressLineAllWordSame;
       }
       else
       {

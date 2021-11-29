@@ -217,6 +217,8 @@ public:
     m_CompName = "Contrastive Clustering Compressor";
     m_Stat->CompressorName = m_CompName;
     parseConfig(configPath);
+
+    compressLine = &VPC::compressLineOnlyAllZero;
   }
 
   /*** getters ***/
@@ -229,6 +231,9 @@ public:
 
 private :
   void parseConfig(std::string &configPath);
+  unsigned (VPC::*compressLine)(std::vector<uint8_t> &dataLine);
+  unsigned compressLineOnlyAllZero(std::vector<uint8_t> &dataLine);
+  unsigned compressLineAllWordSame(std::vector<uint8_t> &dataLine);
 
 private:
   /*** members ***/

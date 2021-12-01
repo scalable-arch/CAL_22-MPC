@@ -13,6 +13,7 @@
 #include "compressor/FPC.h"
 #include "compressor/BDI.h"
 #include "compressor/CPACK.h"
+#include "compressor/BPC.h"
 
 #include "loader/LoaderGPGPU.h"
 #include "loader/LoaderNPY.h"
@@ -31,7 +32,7 @@ int main(int argc, char **argv)
   cxxopts::Options options("Compressor");
 
   options.add_options()
-    ("a,algorithm", "Compression algorithm [CCC/FPC/BDI/CPACK]. Default=CCC", cxxopts::value<std::string>())
+    ("a,algorithm", "Compression algorithm [CCC/FPC/BDI/BPC/CPACK]. Default=CCC", cxxopts::value<std::string>())
     ("i,input",     "Input GPGPU-Sim trace file path. Supported extensions: .log, .npy", cxxopts::value<std::string>())
     ("c,config",    "Config file path (.json).", cxxopts::value<std::string>())
     ("o,output",    "Output directory path", cxxopts::value<std::string>())
@@ -82,6 +83,8 @@ int main(int argc, char **argv)
     compressor = new comp::FPC();
   else if (algorithm == "BDI")
     compressor = new comp::BDI();
+  else if (algorithm == "BPC")
+    compressor = new comp::BPC();
   else if (algorithm == "CPACK")
     compressor = new comp::CPACK();
 

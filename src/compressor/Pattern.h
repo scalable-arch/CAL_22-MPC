@@ -26,7 +26,7 @@ struct PatternResult : public CompResult
 {
   /*** constructors ***/
   PatternResult()
-    : CompResult(), Total(0), Z(0), R(0), U(0),
+    : CompResult(), Total(0), Z(0), R(0), T(0), U(0),
       ImplicitCounts(6, 0), ExplicitCounts(6, 0) {};
 
   // count bytes

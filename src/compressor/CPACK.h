@@ -18,11 +18,10 @@ namespace comp
 class CPACK : public Compressor
 {
 public:
-  CPACK()
+  CPACK(unsigned lineSize)
   {
-    m_Stat = new CompResult();
-    m_CompName = "C-Pack";
-    m_Stat->CompressorName = m_CompName;
+    m_Stat = new CompResult(lineSize);
+    m_Stat->CompressorName = "C-Pack";
 
     // init dictionary
     for (int i = 0; i < NUM_ENTRY; i++)

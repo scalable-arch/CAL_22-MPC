@@ -4,6 +4,7 @@
 #include "Compressor.h"
 #include "CompResult.h"
 #include "LRU.h"
+#include <fmt/core.h>
 
 namespace comp
 {
@@ -25,8 +26,8 @@ enum class PatternState
 struct PatternResult : public CompResult
 {
   /*** constructors ***/
-  PatternResult()
-    : CompResult(), Total(0), Z(0), R(0), T(0), U(0),
+  PatternResult(unsigned lineSize)
+    : CompResult(lineSize), Total(0), Z(0), R(0), T(0), U(0),
       ImplicitCounts(6, 0), ExplicitCounts(6, 0) {};
 
   // count bytes
@@ -55,7 +56,7 @@ struct PatternResult : public CompResult
       else
         ExplicitCounts[selected] += baseSize;
     }
-    Total += baseSize;
+    Total += LineSize;
   }
 
   virtual void Print(std::string workloadName = "", std::string filePath = "")
@@ -90,6 +91,7 @@ struct PatternResult : public CompResult
         file << "b4d2-implicit,b4d2-explicit,";
         file << "b2d1-implicit,b2d1-explicit,";
         file << "uncomp,";
+        file << "totla,";
         file << std::endl;
         file.close();
       }
@@ -106,6 +108,7 @@ struct PatternResult : public CompResult
     for (int i = 0; i < 6; i++)
       stream << fmt::format("{},{},", ImplicitCounts[i], ExplicitCounts[i]);
     stream << fmt::format("{},", U);
+    stream << fmt::format("{},", Total);
     stream << std::endl;
 
     if (file.is_open())
@@ -123,12 +126,11 @@ class Pattern : public Compressor
 {
 public:
   /*** constructor ***/
-  Pattern()
+  Pattern(unsigned lineSize)
     : m_DataCache(CACHESIZE)
   {
-    m_Stat = new PatternResult();
-    m_CompName = "Pattern Checker";
-    m_Stat->CompressorName = m_CompName;
+    m_Stat = new PatternResult(lineSize);
+    m_Stat->CompressorName = "Pattern Checker";
   }
 
   virtual unsigned CompressLine(std::vector<uint8_t> &dataLine);

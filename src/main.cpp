@@ -75,19 +75,20 @@ int main(int argc, char **argv)
     assert(false && "Unsupported extension.");
 
   // instantiates compressor
+  const unsigned lineSize = loader->GetLineSize();
   comp::Compressor *compressor;
   if (algorithm == "VPC")
     compressor = new comp::VPC(configPath);
   else if (algorithm == "FPC")
-    compressor = new comp::FPC();
+    compressor = new comp::FPC(lineSize);
   else if (algorithm == "BDI")
-    compressor = new comp::BDI();
+    compressor = new comp::BDI(lineSize);
   else if (algorithm == "BPC")
-    compressor = new comp::BPC();
+    compressor = new comp::BPC(lineSize);
   else if (algorithm == "CPACK")
-    compressor = new comp::CPACK();
+    compressor = new comp::CPACK(lineSize);
   else if (algorithm == "PATTERN")
-    compressor = new comp::Pattern();
+    compressor = new comp::Pattern(lineSize);
   else
     assert(false && "Invalid name of algorithm.");
 

@@ -33,11 +33,11 @@ struct ClusterStat
 struct VPCResult : public CompResult
 {
   /*** constructors ***/
-  VPCResult()
-    : CompResult(), m_NumModules(0), m_UncompCount(0) {}
+  VPCResult(unsigned lineSize)
+    : CompResult(lineSize), m_NumModules(0), m_UncompCount(0) {}
   
-  VPCResult(int numModules)
-    : CompResult(), m_NumModules(numModules), m_UncompCount(0) 
+  VPCResult(unsigned lineSize, int numModules)
+    : CompResult(lineSize), m_NumModules(numModules), m_UncompCount(0) 
   {
     SetNumModules(numModules);
   }
@@ -213,10 +213,9 @@ public:
   /*** constructors ***/
   VPC(std::string configPath)
   {
-    m_Stat = new VPCResult();
-    m_CompName = "Contrastive Clustering Compressor";
-    m_Stat->CompressorName = m_CompName;
     parseConfig(configPath);
+    m_Stat = new VPCResult(m_LineSize, m_NumModules);
+    m_Stat->CompressorName = "Contrastive Clustering Compressor";
   }
 
   /*** getters ***/

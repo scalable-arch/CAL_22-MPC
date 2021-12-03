@@ -426,7 +426,7 @@ void VPC::parseConfig(std::string &configPath)
       m_CompModules[i] = compModule;
     }
   }
-  static_cast<VPCResult*>(m_Stat)->SetNumModules(m_NumModules);
+//  static_cast<VPCResult*>(m_Stat)->SetNumModules(m_NumModules);
 }
 
 }

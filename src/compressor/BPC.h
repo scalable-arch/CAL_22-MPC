@@ -11,11 +11,10 @@ class BPC : public Compressor
 {
 public:
   /*** constructor ***/
-  BPC()
+  BPC(unsigned lineSize)
   {
-    m_Stat = new CompResult();
-    m_CompName = "Bit-Plane Compression";
-    m_Stat->CompressorName = m_CompName;
+    m_Stat = new CompResult(lineSize);
+    m_Stat->CompressorName = "Bit-Plane Compression";
   }
 
   virtual unsigned CompressLine(std::vector<uint8_t> &dataLine);
@@ -28,7 +27,5 @@ private:
 };
 
 }
-
-
 
 #endif  // __BPC_H__

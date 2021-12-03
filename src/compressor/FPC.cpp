@@ -22,11 +22,11 @@ unsigned FPC::CompressLine(std::vector<uint8_t> &dataLine)
     {
       currCSize += 3 + PREFIX_SIZE;
       i++;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 3 + PREFIX_SIZE, (int)Prefix0);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 3 + PREFIX_SIZE, (int)FPCState::Prefix0);
       while(dataConcat[i] == 0x00000000)
       {
         i++;
-        static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 0, (int)Prefix0);
+        static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 0, (int)FPCState::Prefix0);
       }
       continue;
     }
@@ -35,27 +35,27 @@ unsigned FPC::CompressLine(std::vector<uint8_t> &dataLine)
         ||  ((val & 0xFFFFFFF8) == 0xFFFFFFF8))
     {
       currCSize += 4 + PREFIX_SIZE;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 4 + PREFIX_SIZE, (int)Prefix1);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 4 + PREFIX_SIZE, (int)FPCState::Prefix1);
     }
     // prefix 010 : 8-bit sign extended
     else if(((val & 0xFFFFFF80) == 0x00000000)
         ||  ((val & 0xFFFFFF80) == 0xFFFFFF80))
     {
       currCSize += 8 + PREFIX_SIZE;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 8 + PREFIX_SIZE, (int)Prefix2);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 8 + PREFIX_SIZE, (int)FPCState::Prefix2);
     }
     // prefix 011 : 16-bit sign extended
     else if(((val & 0xFFFF8000) == 0x00000000)
         ||  ((val & 0xFFFF8000) == 0xFFFF8000))
     {
       currCSize += 16 + PREFIX_SIZE;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 16 + PREFIX_SIZE, (int)Prefix3);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 16 + PREFIX_SIZE, (int)FPCState::Prefix3);
     }
     // prefix 100 : 16-bit padded with a zero
     else if((val & 0x0000FFFF) == 0x00000000)
     {
       currCSize += 16 + PREFIX_SIZE;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 16 + PREFIX_SIZE, (int)Prefix4);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 16 + PREFIX_SIZE, (int)FPCState::Prefix4);
     }
     // prefix 101 : two halfwords, each a byte sign-extended
     else if(((val & 0xFF80FF80) == 0x00000000)
@@ -64,7 +64,7 @@ unsigned FPC::CompressLine(std::vector<uint8_t> &dataLine)
         ||  ((val & 0xFF80FF80) == 0xFF80FF80))
     {
       currCSize += 16 + PREFIX_SIZE;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 16 + PREFIX_SIZE, (int)Prefix5);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 16 + PREFIX_SIZE, (int)FPCState::Prefix5);
     }
     // prefix 110 : word consisting fo repeated bytes
     else if(((val & 0xFF) == ((val >> BYTE) & 0xFF))
@@ -72,12 +72,12 @@ unsigned FPC::CompressLine(std::vector<uint8_t> &dataLine)
         &&  ((val & 0xFF) == ((val >> 3*BYTE) & 0xFF)))
     {
       currCSize += 8 + PREFIX_SIZE;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 8 + PREFIX_SIZE, (int)Prefix6);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 8 + PREFIX_SIZE, (int)FPCState::Prefix6);
     }
     else
     {
       currCSize += 4*BYTE + PREFIX_SIZE;
-      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 4*BYTE + PREFIX_SIZE, (int)Prefix7);
+      static_cast<FPCResult*>(m_Stat)->Update(4*BYTE, 4*BYTE + PREFIX_SIZE, (int)FPCState::Prefix7);
     }
     i++;
   }

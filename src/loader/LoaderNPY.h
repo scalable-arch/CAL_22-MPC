@@ -48,6 +48,12 @@ public:
     return memReq;
   }
 
+  virtual unsigned GetLineSize()
+  {
+    unsigned lineSize = m_DataShape[1];
+    return lineSize;
+  }
+
   /*** methods ***/
   virtual void Reset()
   {

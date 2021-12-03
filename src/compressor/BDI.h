@@ -23,8 +23,8 @@ enum class BDIState
 struct BDIResult : public CompResult
 {
   /*** constructors ***/
-  BDIResult()
-    : CompResult(), Counts(9, 0) {};
+  BDIResult(unsigned lineSize)
+    : CompResult(lineSize), Counts(9, 0) {};
 
   virtual void Update(unsigned uncompSize, unsigned compSize, int selected)
   {
@@ -91,11 +91,10 @@ class BDI : public Compressor
 {
 public:
   /*** constructor ***/
-  BDI()
+  BDI(unsigned lineSize)
   {
-    m_Stat = new BDIResult();
-    m_CompName = "Base-Delta Immediate";
-    m_Stat->CompressorName = m_CompName;
+    m_Stat = new BDIResult(lineSize);
+    m_Stat->CompressorName = "Base-Delta Immediate";
   }
 
   virtual unsigned CompressLine(std::vector<uint8_t> &dataLine);
@@ -105,7 +104,6 @@ private:
   bool isRepeated(std::vector<uint8_t>& dataLine, const unsigned granularity);
   unsigned checkBDI(std::vector<uint8_t>& dataLine, const unsigned baseSize, const unsigned deltaSize);
   uint64_t reduceSign(uint64_t x);
-
 };
 
 }

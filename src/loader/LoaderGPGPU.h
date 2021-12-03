@@ -106,6 +106,18 @@ public:
     return memReq;
   }
 
+  // Get line size
+  // It will reset the filepointer to the beginning
+  virtual unsigned GetLineSize()
+  {
+    MemReqGPU_t firstMemReq;
+    GetLine(&firstMemReq);
+
+    unsigned lineSize = firstMemReq.reqSize;
+    Reset();
+    return lineSize;
+  }
+
   /*** methods ***/
   // reset filepointer
   virtual void Reset()

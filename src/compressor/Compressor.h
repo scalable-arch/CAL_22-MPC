@@ -12,14 +12,6 @@
 #include "../loader/LoaderGPGPU.h"
 #include "CompResult.h"
 
-#define BYTE 8
-#define BYTEMAX  0xff
-#define BYTE2MAX 0xffff
-#define BYTE4MAX 0xffffffff
-#define BYTE8MAX 0xffffffffffffffff
-
-#define COMPSIZELIMIT 280
-
 namespace comp
 {
 
@@ -29,7 +21,7 @@ public:
   /*** getters ***/
   std::string GetCompressorName()
   {
-    return m_CompName;
+    return m_Stat->CompressorName;
   }
 
   /*** methods ***/
@@ -37,7 +29,6 @@ public:
   virtual CompResult* GetResult() { return m_Stat; }
 
 protected:
-  std::string m_CompName;
   CompResult *m_Stat; 
 };
 

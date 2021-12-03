@@ -9,13 +9,22 @@
 
 #include "../utils.h"
 
+#define BYTE 8
+#define BYTEMAX  0xff
+#define BYTE2MAX 0xffff
+#define BYTE4MAX 0xffffffff
+#define BYTE8MAX 0xffffffffffffffff
+
+#define COMPSIZELIMIT 280
+
 namespace comp
 {
 
 struct CompResult
 {
-  CompResult()
-    : OriginalSize(0), CompressedSize(0), CompRatio(0) {};
+  CompResult(unsigned lineSize)
+    : LineSize(lineSize),
+      OriginalSize(0), CompressedSize(0), CompRatio(0) {};
 
   virtual void Update(unsigned uncompSize, unsigned compSize, int selected = 0)
   {
@@ -67,6 +76,7 @@ struct CompResult
 
   /*** member varibles ***/
   std::string CompressorName;
+  const unsigned LineSize;
 
   uint64_t OriginalSize;
   uint64_t CompressedSize;

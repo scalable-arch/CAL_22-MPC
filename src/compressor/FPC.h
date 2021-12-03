@@ -9,7 +9,7 @@
 namespace comp
 {
 
-enum FPCState
+enum class FPCState
 {
   Prefix0 = 0,
   Prefix1 = 1,
@@ -24,8 +24,8 @@ enum FPCState
 struct FPCResult : public CompResult
 {
   /*** constructors ***/
-  FPCResult()
-    : CompResult(), TotalWords(0), Counts(8, 0) {};
+  FPCResult(unsigned lineSize)
+    : CompResult(lineSize), TotalWords(0), Counts(8, 0) {};
 
   virtual void Update(unsigned uncompSize, unsigned compSize, int selected)
   {
@@ -90,11 +90,10 @@ struct FPCResult : public CompResult
 class FPC : public Compressor
 {
 public:
-  FPC()
+  FPC(unsigned lineSize)
   {
-    m_Stat = new FPCResult();
-    m_CompName = "Frequent Pattern Compression";
-    m_Stat->CompressorName = m_CompName;
+    m_Stat = new FPCResult(lineSize);
+    m_Stat->CompressorName = "Frequent Pattern Compression";
   }
 
   virtual unsigned CompressLine(std::vector<uint8_t> &dataLine);

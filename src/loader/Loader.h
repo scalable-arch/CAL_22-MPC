@@ -47,6 +47,7 @@ public:
   }
 	/*** getters ***/
 	virtual MemReq_t* GetLine(MemReq_t *) = 0;
+  virtual unsigned GetLineSize() = 0;
 
 	/*** methods ***/
 	virtual void Reset() = 0;

@@ -5,7 +5,7 @@ namespace comp
 
 unsigned Pattern::CompressLine(std::vector<uint8_t> &dataLine)
 {
-  const unsigned lineSize = dataLine.size();
+  const unsigned &lineSize = m_Stat->LineSize;
   const unsigned uncompressedSize = BYTE * lineSize;
 
   PatternState select = PatternState::NotDefined;
@@ -15,11 +15,11 @@ unsigned Pattern::CompressLine(std::vector<uint8_t> &dataLine)
   bestCSize = currCSize;
 
   if (isZeros(dataLine))
-    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::Zeros, 32);
-  if (isRepeated(dataLine, 8))
-    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::Repeat, 32);
+    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::Zeros, lineSize);
+  if (isRepeated(dataLine, 4))
+    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::Repeat, lineSize);
   if (isExistedBefore(dataLine))
-    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::TemporalLocality, 32);
+    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::TemporalLocality, lineSize);
   
   // base8-delta1
   // bestcase[32B / 64B] : (8+3)Bytes+4bits / (8+7)Bytes+8bits
@@ -112,7 +112,7 @@ bool Pattern::isExistedBefore(std::vector<uint8_t> &dataLine)
 unsigned Pattern::checkPattern(std::vector<uint8_t> &dataLine,
     const unsigned baseSize, const unsigned deltaSize)
 {
-  const unsigned lineSize = dataLine.size();
+  const unsigned &lineSize = m_Stat->LineSize;
   uint64_t deltaLimit = 0;
 
   // maximum size delta can have
@@ -208,7 +208,7 @@ void Pattern::countPattern(std::vector<uint8_t>& dataLine, PatternState pattern)
 {
   if (pattern == PatternState::NotDefined)
   {
-    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::NotDefined, 32);
+    static_cast<PatternResult*>(m_Stat)->UpdateStat((int)PatternState::NotDefined, dataLine.size());
     return;
   }
 
@@ -243,7 +243,7 @@ void Pattern::countPattern(std::vector<uint8_t>& dataLine, PatternState pattern)
       printf("Invalid\n");
       exit(111);
   }
-  const unsigned lineSize = dataLine.size();
+  const unsigned &lineSize = m_Stat->LineSize;
   uint64_t deltaLimit = 0;
 
   // maximum size delta can have

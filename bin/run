@@ -11,12 +11,15 @@ output_dir=$3
 config=$4
 cmd="./compressor"
 
-echo "$algorithm"
+#echo "$algorithm"
 listdir=$( ls -d $dataset_dir/* )
-echo $listdir
 for split in $listdir; do
+  split=${split##*/}
   # npy files
   for dataset in $dataset_dir/$split/*set.npy; do
+    if [ ! -f $dataset ]; then
+      break
+    fi
     dataset_name=${dataset##*/}
     echo "$split : $dataset_name"
     if [ "$config" == "" ]; then
@@ -28,12 +31,15 @@ for split in $listdir; do
 
   # log files
   for dataset in $dataset_dir/$split/*.log; do
+    if [ ! -f $dataset ]; then
+      break
+    fi
     dataset_name=${dataset##*/}
     echo "$split : $dataset_name"
     if [ "$config" == "" ]; then
-      $cmd -a $algorithm -i $dataset -o $output_dir/$split/
+      $cmd -a $algorithm -i $dataset -o $output_dir/
     else
-      $cmd -a $algorithm -i $dataset -c $config -o $output_dir/$split/
+      $cmd -a $algorithm -i $dataset -c $config -o $output_dir/
     fi
   done
 done

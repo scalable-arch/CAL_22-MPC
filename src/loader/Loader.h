@@ -29,6 +29,17 @@ struct MemReq_t
 	std::vector<WORD_SIZE> data;
 
 	bool isEnd;
+
+  virtual void Reset()
+  {
+    addr = 0;
+    rw = NA;
+
+    reqSize = 0;
+    data.clear();
+
+    isEnd = false;
+  }
 };
 
 class Loader

@@ -68,9 +68,11 @@ int main(int argc, char **argv)
   // instantiates loader
   trace::Loader *loader;
   if (strutil::ends_with(tracePath, ".log"))
-    loader = new trace::LoaderGPGPU(tracePath);
+    loader = new trace::gpgpusim::LoaderGPGPU(tracePath);
   else if (strutil::ends_with(tracePath, ".npy"))
     loader = new trace::LoaderNPY(tracePath);
+  else if (strutil::ends_with(tracePath, ".txt"))
+    loader = new trace::samsung::LoaderGPGPU(tracePath);
   else
     assert(false && "Unsupported extension.");
 
@@ -154,8 +156,10 @@ comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loa
   // check which loader is passed,
   // and init MemReq_t
   trace::MemReq_t *memReq;
-  if (dynamic_cast<trace::LoaderGPGPU*>(loader) != nullptr)
-    memReq = new trace::MemReqGPU_t;
+  if (dynamic_cast<trace::gpgpusim::LoaderGPGPU*>(loader) != nullptr)
+    memReq = new trace::gpgpusim::MemReqGPU_t;
+  else if (dynamic_cast<trace::samsung::LoaderGPGPU*>(loader) != nullptr)
+    memReq = new trace::samsung::MemReqGPU_t;
   else if (dynamic_cast<trace::LoaderNPY*>(loader) != nullptr)
     memReq = new trace::MemReq_t;
 

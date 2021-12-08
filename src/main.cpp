@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     assert(false && "Unsupported extension.");
 
   // instantiates compressor
-  const unsigned lineSize = loader->GetLineSize();
+  const unsigned lineSize = loader->GetCachelineSize();
   comp::Compressor *compressor;
   if (algorithm == "VPC")
     compressor = new comp::VPC(configPath);
@@ -166,7 +166,7 @@ comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loa
   // compress
   while (1)
   {
-    memReq = loader->GetLine(memReq);
+    memReq = loader->GetCacheline(memReq);
     if (memReq->isEnd) break;
     std::vector<uint8_t> &dataLine = memReq->data;
     compressor->CompressLine(dataLine);

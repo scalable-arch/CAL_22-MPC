@@ -36,7 +36,7 @@ public:
 
   // getters
   int GetRootIndex() { return m_RootIndex; }
-  int GetLineSize()  { return m_LineSize; }
+  int GetCachelineSize()  { return m_LineSize; }
 
   // operator overloading
   uint8_t operator[] (int i) const { return m_Line[i]; }

@@ -2,6 +2,7 @@
 #define __LOADERGPGPU_H__
 
 #include <map>
+#include <queue>
 #include <strutil.h>
 #include <fmt/core.h>
 
@@ -9,6 +10,8 @@
 
 namespace trace {
 namespace gpgpusim {
+
+#define NUM_KEYS 17
 
 // GPGPU-sim mem request type
 enum reqTypeGPU
@@ -52,117 +55,49 @@ struct MemReqGPU_t : public MemReq_t
   uint32_t chip;
   uint32_t bank;
   uint32_t col;
+
+  virtual void Reset()
+  {
+    MemReq_t::Reset();
+
+    kernelID = 0;
+    cycle = 0;
+
+    tpc = sid = wid = pc = instCnt = 0;
+
+    reqType = GLOBAL_ACC_R;
+    mfType = READ_REQUEST;
+
+    row = chip = bank = col = 0;
+  }
 };
 
 class LoaderGPGPU : public Loader
 {
+/*** public member functions ***/
 public:
   /*** constructors ***/
-  LoaderGPGPU(const char *filePath)
-    : Loader(filePath)
-  {
-    if (!isValid())
-    {
-      printf("GPGPU-sim trace file is not valid.\n");
-      exit(1);
-    }
-  }
-  LoaderGPGPU(const std::string filePath)
-    : Loader(filePath)
-  {
-    if (!isValid())
-    {
-      printf("GPGPU-sim trace file is not valid.\n");
-      exit(1);
-    }
-  }
+  LoaderGPGPU(const char *filePath);
+  LoaderGPGPU(const std::string filePath);
 
   /*** getters ***/
-  virtual MemReq_t* GetLine(MemReq_t *memReq)
-  {
-//    m_FileStream.ignore(4);                                                      // req_pos
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->kernelID), 1);   // kid
-//    m_FileStream.ignore(1);                                                      // rw <WIP, change here to memFetchType (GPGPU-sim and This code)>
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->mfType), 1);     // mf_type
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->cycle), 8);      // cycle
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->tpc), 4);        // tpc
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->sid), 4);        // sid
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->wid), 4);        // wid
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->pc), 4);         // pc
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->instCnt), 4);    // inst_cnt
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->addr), 8);       // mem_addr
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->reqType), 4);    // req_type
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->row), 4);        // row
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->chip), 4);       // chip
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->bank), 4);       // bank
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->col), 4);        // col
-    m_FileStream.read((char*)&(static_cast<MemReqGPU_t*>(memReq)->reqSize), 4);    // req_size
-
-    // data
-    static_cast<MemReqGPU_t*>(memReq)->data.resize(static_cast<MemReqGPU_t*>(memReq)->reqSize / sizeof(WORD_SIZE));
-    m_FileStream.read(reinterpret_cast<char*>(static_cast<MemReqGPU_t*>(memReq)->data.data()), static_cast<MemReqGPU_t*>(memReq)->reqSize);
-
-    if (m_FileStream.eof())
-      static_cast<MemReqGPU_t*>(memReq)->isEnd = true;
-    else
-      static_cast<MemReqGPU_t*>(memReq)->isEnd = false;
-    return memReq;
-  }
-
   // Get line size
-  // It will reset the filepointer to the beginning
-  virtual unsigned GetLineSize()
-  {
-    MemReqGPU_t firstMemReq;
-    GetLine(&firstMemReq);
+  // It will reset the filepointer to the beginnig
+  virtual unsigned GetCachelineSize();
 
-    unsigned lineSize = firstMemReq.reqSize;
-    Reset();
-    return lineSize;
-  }
+  // Get a line
+  virtual MemReq_t* GetCacheline(MemReq_t *memReq);
 
   /*** methods ***/
   // reset filepointer
-  virtual void Reset()
-  {
-    m_FileStream.clear();
-    m_FileStream.seekg(0);
+  virtual void Reset();
 
-    if (!isValid())
-    {
-      printf("GPGPU-sim trace file is not valid.\n");
-      exit(1);
-    }
-  }
-
+/*** private member functions ***/
 private:
-  bool isValid()
-  {
-    if (!m_FileStream.is_open())
-    {
-      printf("Failed to open a file. Check the path of the file.\n");
-      return false;
-    }
-    
-    m_FileStream.read((char*)&(m_NumKeys), 1);
-    if (m_NumKeys != 17)
-      return false;
-    
-    for (int i = 0; i < m_NumKeys; i++)
-    {
-      char buff[7] = { '\0' };
-      int size = 0;
+  void isValid();
 
-      m_FileStream.read((char*)buff, 6);
-      m_FileStream.read((char*)&size, 1);
-
-      m_KeySizeList.insert(std::make_pair(buff, size));
-    }
-
-    return true;
-  }
-
-private:
+/*** member variables ***/
+protected:
   // header data
   uint8_t m_NumKeys;
   std::map<std::string, int> m_KeySizeList;
@@ -174,7 +109,6 @@ private:
 namespace samsung {
 
 #define NUM_CH 4
-#define ACCESS_GRAN 32
 
 struct DatasetAttr
 {
@@ -184,6 +118,7 @@ struct DatasetAttr
   uint8_t valid[NUM_CH];
   uint8_t ready[NUM_CH];
   uint8_t last[NUM_CH];
+  uint32_t strb[NUM_CH];
 
   uint8_t data[NUM_CH][ACCESS_GRAN];
 
@@ -199,15 +134,19 @@ struct DatasetAttr
     memset(data, 0, sizeof(uint8_t) * NUM_CH * ACCESS_GRAN);
   }
 
-  void Print()
+  void Print(rw_t RW)
   {
     printf("Time:%14lu, clk:%2d, ", cycle, clock);
     for (int i = 0; i < NUM_CH; i++)
       printf("val_%1d:%2d, ", i, valid[i]);
     for (int i = 0; i < NUM_CH; i++)
       printf("rdy_%1d:%2d, ", i, ready[i]);
-    for (int i = 0; i < NUM_CH; i++)
-      printf("last_%1d:%2d, ", i, last[i]);
+    if (RW == READ)
+      for (int i = 0; i < NUM_CH; i++)
+        printf("last_%1d:%2d, ", i, last[i]);
+    else if (RW == WRITE)
+      for (int i = 0; i < NUM_CH; i++)
+        printf("strb_%1d:%08x, ", i, strb[i]);
     for (int i = 0; i < NUM_CH; i++)
     {
       printf("d_%1d: ", i);
@@ -221,6 +160,11 @@ struct DatasetAttr
 
 struct MemReqGPU_t : public MemReq_t
 {
+  uint64_t cycle;
+  uint8_t ch;
+  uint8_t last;
+  uint32_t strb;
+
   virtual void Reset()
   {
     MemReq_t::Reset();
@@ -229,146 +173,49 @@ struct MemReqGPU_t : public MemReq_t
     ch = 0;
     last = 0;
   }
-
-  uint64_t cycle;
-  uint8_t ch;
-  uint8_t last;
 };
 
 class LoaderGPGPU : public Loader
 {
+/*** public member functions ***/
 public:
   /*** constructors ***/
-  LoaderGPGPU(const char *filePath)
-    : Loader(filePath)
-  {
-    if (!isValid())
-    {
-      printf("The given traffic file is not valid.\n");
-      exit(1);
-    }
-  }
-  LoaderGPGPU(const std::string filePath)
-    : Loader(filePath)
-  {
-    if (!isValid())
-    {
-      printf("The given traffic file is not valid.\n");
-      exit(1);
-    }
-  }
+  LoaderGPGPU(const char *filePath);
+  LoaderGPGPU(const std::string filePath);
 
   /*** getters ***/
-  // Get a line in 32B granularity
-  virtual MemReq_t* GetLine(MemReq_t *memReq)
-  {
-    DatasetAttr datasetAttr;
-    samsung::MemReqGPU_t *memReqGPU = static_cast<samsung::MemReqGPU_t*>(memReq);
-    while (true)
-    {
-      if (ReadLine(datasetAttr))
-      {
-        if (!datasetAttr.clock)
-          continue;
-        if (!datasetAttr.valid[0] && !datasetAttr.valid[1]
-            && !datasetAttr.valid[2] && !datasetAttr.valid[3])
-          continue;
-
-        // check which channel is handshaking
-        uint8_t ch = getHandshakingChannel(datasetAttr);
-        if (ch == -1)
-          continue;
-
-        // move all data to the "memReq"
-        uint64_t &cycle = datasetAttr.cycle;
-        uint8_t &last = datasetAttr.last[ch];
-        uint8_t *data = datasetAttr.data[ch];
-        
-        memReqGPU->cycle = cycle;
-        memReqGPU->ch = ch;
-        memReqGPU->last = last;
-        memReqGPU->reqSize = ACCESS_GRAN * 2;   // TODO: AccessGran can be modified in the future
-        memReqGPU->data.resize(ACCESS_GRAN);
-        std::copy(data, data + ACCESS_GRAN, memReqGPU->data.begin());
-        memReqGPU->isEnd = false;
-      }
-      else
-      {
-        memReqGPU->Reset();
-        memReqGPU->isEnd = true;
-      }
-      return memReq;
-    }
-  }
-
   // Get line size
-  virtual unsigned GetLineSize()
-  {
-    return ACCESS_GRAN;
-  }
+  virtual unsigned GetCachelineSize();
 
-  // Read line from the file
-  bool ReadLine(DatasetAttr &datasetAttr)
-  {
-    std::string line;
-    std::getline(m_FileStream, line);
-    if (m_FileStream.eof())
-      return false;
-    std::vector<std::string> lineAttributes = strutil::split(line, ',');
+  // Get a line in 32B granularity
+  virtual MemReq_t* GetCacheline(MemReq_t *memReq);
 
-    datasetAttr.cycle    = std::stoull(lineAttributes[0]);
-    datasetAttr.clock    = (uint8_t)std::stoi(lineAttributes[1]);
-    for (int i = 0; i < NUM_CH; i++)
-    {
-      datasetAttr.valid[i] = (uint8_t)std::stoi(lineAttributes[ 2 + i]);
-      datasetAttr.ready[i] = (uint8_t)std::stoi(lineAttributes[10 + i]);
-      datasetAttr.last[i]  = (uint8_t)std::stoi(lineAttributes[14 + i]);
-      std::string &hexStringData = lineAttributes[6 + i];
-      for (int j = 0; j < ACCESS_GRAN; j++)
-      {
-        std::string hex(hexStringData.begin() + 2 * j, hexStringData.begin() + 2 * j + 2);
-        uint8_t c = std::stoi(hex, nullptr,  16);
-        datasetAttr.data[i][j] = c;
-      }
-    }
-    return true;
-  }
+  /*** public methods ***/
+  // Read a line from the file
+  bool LoadLine(DatasetAttr &datasetAttr);
 
-  /*** methods ***/
-  virtual void Reset()
-  {
-    m_FileStream.clear();
-    m_FileStream.seekg(0);
+  // Reset the file pointer
+  virtual void Reset();
 
-    if (!isValid())
-    {
-      printf("The given traffic file is not valid.\n");
-      exit(1);
-    }
-  }
-
+/*** private member functions ***/
 private:
-  bool isValid()
-  {
-    if (!m_FileStream.is_open())
-    {
-      printf("Failed to open a file. Check the path of the file.\n");
-      return false;
-    }
+  void isValid();
 
-    std::string firstLine;
-    std::getline(m_FileStream, firstLine);
+  bool LoadLineRead(DatasetAttr &datasetAttr);
+  bool LoadLineWrite(DatasetAttr &datasetAttr);
 
-    return true;
-  }
+  MemReq_t* GetCachelineRead(MemReq_t *memReq);
+  MemReq_t* GetCachelineWrite(MemReq_t *memReq);
 
-  uint8_t getHandshakingChannel(DatasetAttr &datasetAttr)
-  {
-    for (int i = 0; i < NUM_CH; i++)
-      if (datasetAttr.valid[i] == 1 && datasetAttr.ready[i] == 1)
-        return i;
-    return -1;
-  }
+  std::vector<uint8_t> getHandshakingChannels(DatasetAttr &datasetAttr);
+
+/*** member variables ***/
+protected:
+  MemReq_t* (LoaderGPGPU::*mp_GetCacheline)(MemReq_t*);
+  bool (LoaderGPGPU::*mp_LoadLine)(DatasetAttr&);
+
+  rw_t m_RW;
+  std::queue<MemReqGPU_t> m_MemReqQueue;
 };
 
 

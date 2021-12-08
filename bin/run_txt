@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if !([ "$#" == 3 ] || [ "$#" == 4 ]); then
+  echo "Usage: run algorithm dataset_dir output_dir [config]"
+  exit 1
+fi
+
+algorithm=$1
+dataset_dir=$2
+output_dir=$3
+config=$4
+cmd="./compressor"
+
+#echo "$algorithm"
+for dataset in $dataset_dir/*.txt; do
+  if [ ! -f $dataset ]; then
+    break
+  fi
+  dataset_name=${dataset##*/}
+  echo "$dataset_name"
+  if [ "$config" == "" ]; then
+    $cmd -a $algorithm -i $dataset -o $output_dir/
+  else
+    $cmd -a $algorithm -i $dataset -c $config -o $output_dir/
+  fi
+done
+

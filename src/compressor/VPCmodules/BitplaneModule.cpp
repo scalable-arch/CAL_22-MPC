@@ -7,7 +7,7 @@ namespace comp
   Binary BitplaneModule::ProcessLine(Symbol &residueLine)
   {
     // residueLine to bitArray
-    int lineSize = residueLine.GetLineSize();
+    int lineSize = residueLine.GetCachelineSize();
 
     Binary bitArray;
     bitArray.SetSize(lineSize, BYTE);

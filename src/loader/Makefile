@@ -1,2 +1,11 @@
-all :
-	@echo "Nothing to compile here. Skip directory"
+LOADERS = LOADER_NPY LOADER_GPGPU
+
+all : $(LOADERS)
+
+LOADER_NPY :
+	@$(CC) $(CFLAGS) -c -o $(OBJDIR)/LoaderNPY.o LoaderNPY.cpp $(LDFLAGS)
+
+LOADER_GPGPU :
+	@$(CC) $(CFLAGS) -c -o $(OBJDIR)/LoaderGPGPU.o LoaderGPGPU.cpp $(LDFLAGS)
+
+

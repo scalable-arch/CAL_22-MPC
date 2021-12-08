@@ -219,7 +219,7 @@ public:
   }
 
   /*** getters ***/
-  int GetLineSize()    { return m_LineSize; }
+  int GetCachelineSize()    { return m_LineSize; }
   int GetNumModules()  { return m_NumModules; }
   int GetNumClusters() { return m_NumClusters; }
 

@@ -15,7 +15,7 @@ Symbol ResidueModule::ProcessLine(std::vector<uint8_t> &cacheLine)
 
   predictedLine = mp_PredictorModule->PredictLine(cacheLine);
 
-  residueLine.SetSize(predictedLine.GetLineSize());
+  residueLine.SetSize(predictedLine.GetCachelineSize());
   residueLine.SetRootIndex(m_RootIndex);
 
   // make residues
@@ -23,7 +23,7 @@ Symbol ResidueModule::ProcessLine(std::vector<uint8_t> &cacheLine)
   root = cacheLine[m_RootIndex];
   residueLine[0] = root;
   int j = 1;
-  for (int i = 0; i < predictedLine.GetLineSize(); i++)
+  for (int i = 0; i < predictedLine.GetCachelineSize(); i++)
   {
     if (i == m_RootIndex)
       continue;

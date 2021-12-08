@@ -12,7 +12,7 @@ export BINDIR = $(PWD)/bin
 MAINDIR       = $(SRCDIR)
 COMPRESSORDIR = $(SRCDIR)/compressor
 LOADERDIR     = $(SRCDIR)/loader
-SUBDIRS       = $(COMPRESSORDIR) $(LOADERDIR) $(MAINDIR)
+SUBDIRS       = $(LOADERDIR) $(COMPRESSORDIR) $(MAINDIR)
 
 all : $(SUBDIRS)
 

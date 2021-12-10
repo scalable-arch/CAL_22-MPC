@@ -58,7 +58,7 @@ public:
       m_FileStream.open(filePath.c_str(), std::ios_base::in | std::ios_base::binary);
   }
 	/*** getters ***/
-	virtual MemReq_t* GetCacheline(MemReq_t *, bool) = 0;
+	virtual MemReq_t* GetCacheline(MemReq_t *) = 0;
   virtual unsigned GetCachelineSize() = 0;
 
 	/*** methods ***/

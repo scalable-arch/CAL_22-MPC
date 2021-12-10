@@ -94,7 +94,7 @@ public:
 
 /*** private member functions ***/
 private:
-  void isValid();
+  void isFileValid();
 
 /*** member variables ***/
 protected:
@@ -109,6 +109,7 @@ protected:
 namespace samsung {
 
 #define NUM_CH 4
+#define BURST_LEN 2
 
 struct DatasetAttr
 {
@@ -162,8 +163,8 @@ struct MemReqGPU_t : public MemReq_t
 {
   uint64_t cycle;
   uint8_t ch;
-  uint8_t last;
-  uint32_t strb;
+//  uint8_t last;
+//  uint32_t strb;
 
   virtual void Reset()
   {
@@ -171,7 +172,7 @@ struct MemReqGPU_t : public MemReq_t
 
     cycle = 0;
     ch = 0;
-    last = 0;
+//    last = 0;
   }
 };
 
@@ -182,13 +183,15 @@ public:
   /*** constructors ***/
   LoaderGPGPU(const char *filePath);
   LoaderGPGPU(const std::string filePath);
+  LoaderGPGPU(const char *filePath, const unsigned lineSize);
+  LoaderGPGPU(const std::string filePath, const unsigned lineSize);
 
   /*** getters ***/
-  // Get line size
-  virtual unsigned GetCachelineSize();
-
   // Get a line in 32B granularity
   virtual MemReq_t* GetCacheline(MemReq_t *memReq);
+
+  // Get line size
+  virtual unsigned GetCachelineSize();
 
   /*** public methods ***/
   // Read a line from the file
@@ -199,15 +202,15 @@ public:
 
 /*** private member functions ***/
 private:
-  void isValid();
-
   bool readLineR(DatasetAttr &datasetAttr);
   bool readLineW(DatasetAttr &datasetAttr);
 
-  MemReq_t* GetCachelineRead(MemReq_t *memReq);
-  MemReq_t* GetCachelineWrite(MemReq_t *memReq);
+  MemReq_t* GetCacheline32(MemReq_t *memReq);
+  MemReq_t* GetCacheline64(MemReq_t *memReq);
 
   std::vector<uint8_t> getHandshakingChannels(DatasetAttr &datasetAttr);
+
+  void isFileValid();
 
 /*** member variables ***/
 protected:
@@ -216,6 +219,9 @@ protected:
 
   rw_t m_RW;
   std::queue<MemReqGPU_t> m_MemReqQueue;
+  std::queue<MemReqGPU_t> m_MemReqChQueue[NUM_CH];
+
+  const unsigned m_LineSize;
 };
 
 

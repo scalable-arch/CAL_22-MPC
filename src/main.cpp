@@ -17,6 +17,8 @@
 #include "loader/LoaderGPGPU.h"
 #include "loader/LoaderNPY.h"
 
+#define REQ_SIZE 64
+
 comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loader);
 
 int main(int argc, char **argv)
@@ -72,7 +74,7 @@ int main(int argc, char **argv)
   else if (strutil::ends_with(tracePath, ".npy"))
     loader = new trace::LoaderNPY(tracePath);
   else if (strutil::ends_with(tracePath, ".txt"))
-    loader = new trace::samsung::LoaderGPGPU(tracePath);
+    loader = new trace::samsung::LoaderGPGPU(tracePath, REQ_SIZE);
   else
     assert(false && "Unsupported extension.");
 

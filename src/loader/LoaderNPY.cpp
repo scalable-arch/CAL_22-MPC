@@ -6,18 +6,9 @@ namespace trace
 
 /*** constructors ***/
 LoaderNPY::LoaderNPY(const char *filePath)
-  : Loader(filePath), m_CurrentLine(0)
-{
-  bool fortran_order;
-  npy::LoadArrayFromNumpy(m_FilePath, m_DataShape, fortran_order, m_DataLines);
-};
-
+  : Loader(filePath), m_CurrentLine(0) { Reset(); }
 LoaderNPY::LoaderNPY(const std::string filePath)
-  : Loader(filePath), m_CurrentLine(0)
-{
-  bool fortran_order;
-  npy::LoadArrayFromNumpy(m_FilePath, m_DataShape, fortran_order, m_DataLines);
-};
+  : Loader(filePath), m_CurrentLine(0) { Reset(); }
 
 /*** getters ***/
 MemReq_t* LoaderNPY::GetCacheline(MemReq_t *memReq)
@@ -50,6 +41,9 @@ unsigned LoaderNPY::GetCachelineSize()
 
 void LoaderNPY::Reset()
 {
+  bool fortran_order;
+  npy::LoadArrayFromNumpy(m_FilePath, m_DataShape, fortran_order, m_DataLines);
+
   m_CurrentLine = 0;
 }
 

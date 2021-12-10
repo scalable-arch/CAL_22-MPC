@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "LoaderGPGPU.h"
 #include <strutil.h>
 
@@ -5,9 +7,9 @@ namespace trace {
 namespace gpgpusim {
   /*** constructors ***/
   LoaderGPGPU::LoaderGPGPU(const char *filePath)
-    : Loader(filePath) { isValid(); }
+    : Loader(filePath) { Reset(); }
   LoaderGPGPU::LoaderGPGPU(const std::string filePath)
-    : Loader(filePath) { isValid(); }
+    : Loader(filePath) { Reset(); }
 
   /*** getters ***/
   unsigned LoaderGPGPU::GetCachelineSize()
@@ -56,11 +58,11 @@ namespace gpgpusim {
     m_FileStream.clear();
     m_FileStream.seekg(0);
 
-    isValid();
+    isFileValid();
   }
 
   /*** private methods ***/
-  void LoaderGPGPU::isValid()
+  void LoaderGPGPU::isFileValid()
   {
     if (!m_FileStream.is_open())
     {
@@ -92,86 +94,52 @@ namespace gpgpusim {
       exit(1);
     }
   }
-
 }
 
 namespace samsung {
   /*** constructors ***/
   LoaderGPGPU::LoaderGPGPU(const char *filePath)
-    : Loader(filePath), m_RW(NA) { isValid(); }
+    : Loader(filePath), m_RW(NA), m_LineSize(ACCESS_GRAN) { Reset(); }
   LoaderGPGPU::LoaderGPGPU(const std::string filePath)
-    : Loader(filePath), m_RW(NA) { isValid(); }
+    : Loader(filePath), m_RW(NA), m_LineSize(ACCESS_GRAN) { Reset(); }
+  LoaderGPGPU::LoaderGPGPU(const char *filePath, const unsigned lineSize)
+    : Loader(filePath), m_RW(NA), m_LineSize(lineSize) { Reset(); }
+  LoaderGPGPU::LoaderGPGPU(const std::string filePath, const unsigned lineSize)
+    : Loader(filePath), m_RW(NA), m_LineSize(ACCESS_GRAN) { Reset(); }
 
   /*** getters ***/
-  unsigned LoaderGPGPU::GetCachelineSize() { return ACCESS_GRAN; }
-
   MemReq_t* LoaderGPGPU::GetCacheline(MemReq_t *memReq) { return (this->*mp_GetCacheline)(memReq); }
+  unsigned LoaderGPGPU::GetCachelineSize() { return m_LineSize; }
 
   /*** public methods ***/
   bool LoaderGPGPU::ReadLine(DatasetAttr &datasetAttr) { return (this->*mp_ReadLine)(datasetAttr); }
 
   void LoaderGPGPU::Reset()
   {
+    assert ((m_LineSize == ACCESS_GRAN || m_LineSize == ACCESS_GRAN * BURST_LEN)
+        && "Invalid cache-line size");
+
     m_FileStream.clear();
     m_FileStream.seekg(0);
 
-    isValid();
+    // check if file is valid or not
+    isFileValid();
+
+    // assign appropriate function to the function pointer
+    // getcacheline
+    if (m_LineSize == ACCESS_GRAN)
+      mp_GetCacheline = &LoaderGPGPU::GetCacheline32;
+    else if (m_LineSize == ACCESS_GRAN * BURST_LEN)
+      mp_GetCacheline = &LoaderGPGPU::GetCacheline64;
+
+    // readline
+    if (m_RW == READ)
+      mp_ReadLine = &LoaderGPGPU::readLineR;
+    else if (m_RW == WRITE)
+      mp_ReadLine = &LoaderGPGPU::readLineW;
   }
 
   /*** private methods ***/
-  void LoaderGPGPU::isValid()
-  {
-    if (!m_FileStream.is_open())
-    {
-      printf("Failed to open a file. Check the path of the file.\n");
-      exit(1);
-    }
-
-    // get the first line from the file
-    std::string firstLine;
-    std::getline(m_FileStream, firstLine);
-
-    // check whether the file is read or write
-    std::vector<std::string> splitFirstLine = strutil::split(firstLine, ',');
-    for (int i = 0; i < splitFirstLine.size(); i++)
-    {
-      std::string &col = splitFirstLine[i];
-      if (strutil::contains(col, "last"))
-      {
-        m_RW = READ;
-        break;
-      }
-      else if (strutil::contains(col, "strb"))
-      {
-        m_RW = WRITE;
-        break;
-      }
-    }
-    if (m_RW == NA)
-    {
-      printf("The header of the GPU traffic file is not valid.\n");
-      exit(1);
-    }
-
-    // assign appropriate function to the function pointer
-    if (m_RW == READ)
-    {
-      mp_GetCacheline = &LoaderGPGPU::GetCachelineRead;
-      mp_ReadLine = &LoaderGPGPU::readLineR;
-    }
-    else if (m_RW == WRITE)
-    {
-      mp_GetCacheline = &LoaderGPGPU::GetCachelineWrite;
-      mp_ReadLine = &LoaderGPGPU::readLineW;
-    }
-
-    if (m_FileStream.eof())
-    {
-      printf("The header of the GPU traffic file is not valid.\n");
-      exit(1);
-    }
-  }
-
   bool LoaderGPGPU::readLineR(DatasetAttr &datasetAttr)
   {
     std::string line;
@@ -224,7 +192,7 @@ namespace samsung {
     return true;
   }
 
-  MemReq_t* LoaderGPGPU::GetCachelineRead(MemReq_t *memReq)
+  MemReq_t* LoaderGPGPU::GetCacheline32(MemReq_t *memReq)
   {
     DatasetAttr datasetAttr;
 
@@ -253,15 +221,15 @@ namespace samsung {
             uint8_t &ch = *it;
 
             uint64_t &cycle = datasetAttr.cycle;
-            uint8_t &last = datasetAttr.last[ch];
+//            uint8_t &last = datasetAttr.last[ch];
             uint8_t *data = datasetAttr.data[ch];
 
             memReqGPU.rw = READ;
             
             memReqGPU.cycle = cycle;
             memReqGPU.ch = ch;
-            memReqGPU.last = last;
-            memReqGPU.reqSize = ACCESS_GRAN * 2;   // TODO: AccessGran can be modified in the future
+//            memReqGPU.last = last;
+            memReqGPU.reqSize = ACCESS_GRAN * BURST_LEN;   // TODO: AccessGran can be modified in the future
             memReqGPU.data.resize(ACCESS_GRAN);
             std::copy(data, data + ACCESS_GRAN, memReqGPU.data.begin());
             memReqGPU.isEnd = false;
@@ -292,15 +260,81 @@ namespace samsung {
     return memReq;
   }
 
-  MemReq_t* LoaderGPGPU::GetCachelineWrite(MemReq_t *memReq)
+//  MemReq_t* LoaderGPGPU::GetCachelineWrite32(MemReq_t *memReq)
+//  {
+//    DatasetAttr datasetAttr;
+//
+//    // push memReq to the queue
+//    if (m_MemReqQueue.empty())
+//    {
+//      while (true)
+//      {
+//        if (ReadLine(datasetAttr))
+//        {
+//          if (!datasetAttr.clock)
+//            continue;
+//          if (!datasetAttr.valid[0] && !datasetAttr.valid[1]
+//              && !datasetAttr.valid[2] && !datasetAttr.valid[3])
+//            continue;
+//
+//          // check which channel is handshaking
+//          std::vector<uint8_t> channels = getHandshakingChannels(datasetAttr);
+//          if (channels.empty())
+//            continue;
+//
+//          for (auto it = channels.begin(); it != channels.end(); it++)
+//          {
+//            MemReqGPU_t memReqGPU;
+//            uint8_t &ch = *it;
+//
+//            uint64_t &cycle = datasetAttr.cycle;
+////            uint32_t &strb = datasetAttr.strb[ch];
+//            uint8_t *data = datasetAttr.data[ch];
+//
+//            memReqGPU.rw = WRITE;
+//
+//            memReqGPU.cycle = cycle;
+//            memReqGPU.ch = ch;
+////            memReqGPU.strb = strb;
+//            memReqGPU.reqSize = ACCESS_GRAN * BURST_LEN;
+//            memReqGPU.data.resize(ACCESS_GRAN);
+//            std::copy(data, data + ACCESS_GRAN, memReqGPU.data.begin());
+//            memReqGPU.isEnd = false;
+//
+//            m_MemReqQueue.push(memReqGPU);
+//          }
+//          break;
+//        }
+//        else // last memReq
+//        {
+//          MemReqGPU_t memReqGPU;
+//          memReqGPU.Reset();
+//          memReqGPU.isEnd = true;
+//
+//          m_MemReqQueue.push(memReqGPU);
+//          break;
+//        }
+//      }
+//    }
+//
+//    // pop from the queue and return it
+//    MemReqGPU_t *memReqGPU = static_cast<MemReqGPU_t*>(memReq);
+//    MemReqGPU_t popMemReqGPU = m_MemReqQueue.front();
+//
+//    *memReqGPU = popMemReqGPU;
+//    m_MemReqQueue.pop();
+//    return memReq;
+//  }
+
+  MemReq_t* LoaderGPGPU::GetCacheline64(MemReq_t *memReq)
   {
     DatasetAttr datasetAttr;
 
-    // push memReq to the queue
     if (m_MemReqQueue.empty())
     {
       while (true)
       {
+        // read a line and enqueue
         if (ReadLine(datasetAttr))
         {
           if (!datasetAttr.clock)
@@ -314,30 +348,68 @@ namespace samsung {
           if (channels.empty())
             continue;
 
+          // enqueue to the channel queue
           for (auto it = channels.begin(); it != channels.end(); it++)
           {
             MemReqGPU_t memReqGPU;
             uint8_t &ch = *it;
 
             uint64_t &cycle = datasetAttr.cycle;
-            uint32_t &strb = datasetAttr.strb[ch];
             uint8_t *data = datasetAttr.data[ch];
 
-            memReqGPU.rw = WRITE;
+            memReqGPU.rw = READ;
             
             memReqGPU.cycle = cycle;
             memReqGPU.ch = ch;
-            memReqGPU.strb = strb;
-            memReqGPU.reqSize = ACCESS_GRAN * 2;   // TODO: AccessGran can be modified in the future
+            memReqGPU.reqSize = ACCESS_GRAN * BURST_LEN;   // TODO: AccessGran can be modified in the future
             memReqGPU.data.resize(ACCESS_GRAN);
             std::copy(data, data + ACCESS_GRAN, memReqGPU.data.begin());
             memReqGPU.isEnd = false;
 
-            m_MemReqQueue.push(memReqGPU);
+            m_MemReqChQueue[ch].push(memReqGPU);
           }
-          break;
+
+          // check if whole burst is transferred
+          bool isEnqueued = false;
+          for (int ch = 0; ch < NUM_CH; ch++)
+          {
+            if (m_MemReqChQueue[ch].size() == BURST_LEN)
+            {
+              MemReqGPU_t returningMemReqGPU;
+              returningMemReqGPU.ch = ch;
+              std::vector<uint8_t> &returningData = returningMemReqGPU.data;
+
+              // first memReq
+              MemReqGPU_t firstMemReqGPU;
+              firstMemReqGPU = m_MemReqChQueue[ch].front();
+              uint64_t &firstCycle = firstMemReqGPU.cycle;
+              std::vector<uint8_t> &firstData = firstMemReqGPU.data;
+
+              returningData.insert(returningData.end(), firstData.begin(), firstData.end());
+              m_MemReqChQueue[ch].pop();
+
+              // second memReq
+              MemReqGPU_t secondMemReqGPU;
+              secondMemReqGPU = m_MemReqChQueue[ch].front();
+              uint64_t &secondCycle = secondMemReqGPU.cycle;
+              std::vector<uint8_t> &secondData = secondMemReqGPU.data;
+
+              returningData.insert(returningData.end(), secondData.begin(), secondData.end());
+              returningMemReqGPU.cycle = secondCycle;
+              m_MemReqChQueue[ch].pop();
+
+              // enqueue returning memReq
+              m_MemReqQueue.push(returningMemReqGPU);
+
+              isEnqueued = true;
+            }
+          }
+
+          if (isEnqueued)
+            break;
         }
-        else // last memReq
+        // if eof, enqueue empty memReq (last)
+        else 
         {
           MemReqGPU_t memReqGPU;
           memReqGPU.Reset();
@@ -347,6 +419,7 @@ namespace samsung {
           break;
         }
       }
+
     }
 
     // pop from the queue and return it
@@ -356,6 +429,7 @@ namespace samsung {
     *memReqGPU = popMemReqGPU;
     m_MemReqQueue.pop();
     return memReq;
+
   }
 
   std::vector<uint8_t> LoaderGPGPU::getHandshakingChannels(DatasetAttr &datasetAttr)
@@ -367,7 +441,47 @@ namespace samsung {
     return channels;
   }
   
-  
+  void LoaderGPGPU::isFileValid()
+  {
+    if (!m_FileStream.is_open())
+    {
+      printf("Failed to open a file. Check the path of the file.\n");
+      exit(1);
+    }
+
+    // get the first line from the file
+    std::string firstLine;
+    std::getline(m_FileStream, firstLine);
+
+    // check whether the file is read or write
+    std::vector<std::string> splitFirstLine = strutil::split(firstLine, ',');
+    for (int i = 0; i < splitFirstLine.size(); i++)
+    {
+      std::string &col = splitFirstLine[i];
+      if (strutil::contains(col, "last"))
+      {
+        m_RW = READ;
+        break;
+      }
+      else if (strutil::contains(col, "strb"))
+      {
+        m_RW = WRITE;
+        break;
+      }
+    }
+    if (m_RW == NA)
+    {
+      printf("The header of the GPU traffic file is not valid.\n");
+      exit(1);
+    }
+
+    if (m_FileStream.eof())
+    {
+      printf("The header of the GPU traffic file is not valid.\n");
+      exit(1);
+    }
+  }
+
 
 }
 }

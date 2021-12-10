@@ -41,6 +41,22 @@ struct MemReq_t
 
     isEnd = false;
   }
+
+  // setters
+  void Set(MemReq_t &memReq)
+  {
+    *this = memReq;
+  }
+  MemReq_t &operator=(MemReq_t &rhs)
+  {
+    this->addr = rhs.addr;
+    this->rw = rhs.rw;
+    this->reqSize = rhs.reqSize;
+    this->data = rhs.data;
+    this->isEnd = rhs.isEnd;
+    
+    return *this;
+  }
 };
 
 class Loader

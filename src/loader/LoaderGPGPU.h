@@ -70,6 +70,39 @@ struct MemReqGPU_t : public MemReq_t
 
     row = chip = bank = col = 0;
   }
+
+  // setters
+  void Set(MemReqGPU_t &memReqGPU)
+  {
+    *this = memReqGPU;
+  }
+  MemReqGPU_t &operator=(MemReqGPU_t &rhs)
+  {
+    this->addr = rhs.addr;
+    this->rw = rhs.rw;
+    this->reqSize = rhs.reqSize;
+    this->data = rhs.data;
+    this->isEnd = rhs.isEnd;
+
+    this->kernelID = rhs.kernelID;
+    this->cycle = rhs.cycle;
+
+    this->tpc = rhs.tpc;
+    this->sid = rhs.sid;
+    this->wid = rhs.wid;
+    this->pc = rhs.pc;
+    this->instCnt = rhs.instCnt;
+
+    this->reqType = rhs.reqType;
+    this->mfType = rhs.mfType;
+
+    this->row = rhs.row;
+    this->chip = rhs.chip;
+    this->bank = rhs.bank;
+    this->col = rhs.col;
+    
+    return *this;
+  }
 };
 
 class LoaderGPGPU : public Loader
@@ -174,6 +207,25 @@ struct MemReqGPU_t : public MemReq_t
     ch = 0;
 //    last = 0;
   }
+  
+  // setters
+  void Set(MemReqGPU_t &memReqGPU)
+  {
+    *this = memReqGPU;
+  }
+  MemReqGPU_t &operator=(MemReqGPU_t &rhs)
+  {
+    this->addr = rhs.addr;
+    this->rw = rhs.rw;
+    this->reqSize = rhs.reqSize;
+    this->data = rhs.data;
+    this->isEnd = rhs.isEnd;
+
+    this->cycle = rhs.cycle;
+    this->ch = rhs.ch;
+    
+    return *this;
+  }
 };
 
 class LoaderGPGPU : public Loader
@@ -205,8 +257,8 @@ private:
   bool readLineR(DatasetAttr &datasetAttr);
   bool readLineW(DatasetAttr &datasetAttr);
 
-  MemReq_t* GetCacheline32(MemReq_t *memReq);
-  MemReq_t* GetCacheline64(MemReq_t *memReq);
+  MemReq_t* getCacheline32(MemReq_t *memReq);
+  MemReq_t* getCacheline64(MemReq_t *memReq);
 
   std::vector<uint8_t> getHandshakingChannels(DatasetAttr &datasetAttr);
 

@@ -1,5 +1,6 @@
 #include <cassert>
 
+#include "Loader.h"
 #include "LoaderGPGPU.h"
 #include <strutil.h>
 
@@ -105,7 +106,7 @@ namespace samsung {
   LoaderGPGPU::LoaderGPGPU(const char *filePath, const unsigned lineSize)
     : Loader(filePath), m_RW(NA), m_LineSize(lineSize) { Reset(); }
   LoaderGPGPU::LoaderGPGPU(const std::string filePath, const unsigned lineSize)
-    : Loader(filePath), m_RW(NA), m_LineSize(ACCESS_GRAN) { Reset(); }
+    : Loader(filePath), m_RW(NA), m_LineSize(lineSize) { Reset(); }
 
   /*** getters ***/
   MemReq_t* LoaderGPGPU::GetCacheline(MemReq_t *memReq) { return (this->*mp_GetCacheline)(memReq); }
@@ -128,9 +129,9 @@ namespace samsung {
     // assign appropriate function to the function pointer
     // getcacheline
     if (m_LineSize == ACCESS_GRAN)
-      mp_GetCacheline = &LoaderGPGPU::GetCacheline32;
+      mp_GetCacheline = &LoaderGPGPU::getCacheline32;
     else if (m_LineSize == ACCESS_GRAN * BURST_LEN)
-      mp_GetCacheline = &LoaderGPGPU::GetCacheline64;
+      mp_GetCacheline = &LoaderGPGPU::getCacheline64;
 
     // readline
     if (m_RW == READ)
@@ -192,7 +193,7 @@ namespace samsung {
     return true;
   }
 
-  MemReq_t* LoaderGPGPU::GetCacheline32(MemReq_t *memReq)
+  MemReq_t* LoaderGPGPU::getCacheline32(MemReq_t *memReq)
   {
     DatasetAttr datasetAttr;
 
@@ -326,7 +327,7 @@ namespace samsung {
 //    return memReq;
 //  }
 
-  MemReq_t* LoaderGPGPU::GetCacheline64(MemReq_t *memReq)
+  MemReq_t* LoaderGPGPU::getCacheline64(MemReq_t *memReq)
   {
     DatasetAttr datasetAttr;
 
@@ -361,7 +362,6 @@ namespace samsung {
             
             memReqGPU.cycle = cycle;
             memReqGPU.ch = ch;
-            memReqGPU.reqSize = ACCESS_GRAN * BURST_LEN;   // TODO: AccessGran can be modified in the future
             memReqGPU.data.resize(ACCESS_GRAN);
             std::copy(data, data + ACCESS_GRAN, memReqGPU.data.begin());
             memReqGPU.isEnd = false;
@@ -377,7 +377,12 @@ namespace samsung {
             {
               MemReqGPU_t returningMemReqGPU;
               returningMemReqGPU.ch = ch;
+              returningMemReqGPU.rw = m_RW;
+              returningMemReqGPU.reqSize = ACCESS_GRAN * BURST_LEN; 
+              returningMemReqGPU.isEnd = false;
+
               std::vector<uint8_t> &returningData = returningMemReqGPU.data;
+//              returningData.resize(ACCESS_GRAN * BURST_LEN);
 
               // first memReq
               MemReqGPU_t firstMemReqGPU;
@@ -386,6 +391,7 @@ namespace samsung {
               std::vector<uint8_t> &firstData = firstMemReqGPU.data;
 
               returningData.insert(returningData.end(), firstData.begin(), firstData.end());
+//              std::copy(firstData.begin(), firstData.begin() + ACCESS_GRAN, returningData.begin());
               m_MemReqChQueue[ch].pop();
 
               // second memReq
@@ -395,6 +401,7 @@ namespace samsung {
               std::vector<uint8_t> &secondData = secondMemReqGPU.data;
 
               returningData.insert(returningData.end(), secondData.begin(), secondData.end());
+//              std::copy(secondData.begin(), secondData.begin() + ACCESS_GRAN, returningData.begin());
               returningMemReqGPU.cycle = secondCycle;
               m_MemReqChQueue[ch].pop();
 

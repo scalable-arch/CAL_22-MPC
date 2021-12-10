@@ -17,7 +17,7 @@
 #include "loader/LoaderGPGPU.h"
 #include "loader/LoaderNPY.h"
 
-#define REQ_SIZE 64
+#define REQ_SIZE (ACCESS_GRAN*2)
 
 comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loader);
 

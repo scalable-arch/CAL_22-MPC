@@ -192,7 +192,7 @@ public:
 
   /*** public methods ***/
   // Read a line from the file
-  bool LoadLine(DatasetAttr &datasetAttr);
+  bool ReadLine(DatasetAttr &datasetAttr);
 
   // Reset the file pointer
   virtual void Reset();
@@ -201,8 +201,8 @@ public:
 private:
   void isValid();
 
-  bool LoadLineRead(DatasetAttr &datasetAttr);
-  bool LoadLineWrite(DatasetAttr &datasetAttr);
+  bool readLineR(DatasetAttr &datasetAttr);
+  bool readLineW(DatasetAttr &datasetAttr);
 
   MemReq_t* GetCachelineRead(MemReq_t *memReq);
   MemReq_t* GetCachelineWrite(MemReq_t *memReq);
@@ -212,7 +212,7 @@ private:
 /*** member variables ***/
 protected:
   MemReq_t* (LoaderGPGPU::*mp_GetCacheline)(MemReq_t*);
-  bool (LoaderGPGPU::*mp_LoadLine)(DatasetAttr&);
+  bool (LoaderGPGPU::*mp_ReadLine)(DatasetAttr&);
 
   rw_t m_RW;
   std::queue<MemReqGPU_t> m_MemReqQueue;

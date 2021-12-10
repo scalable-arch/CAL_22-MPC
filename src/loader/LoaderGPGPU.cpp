@@ -108,7 +108,7 @@ namespace samsung {
   MemReq_t* LoaderGPGPU::GetCacheline(MemReq_t *memReq) { return (this->*mp_GetCacheline)(memReq); }
 
   /*** public methods ***/
-  bool LoaderGPGPU::LoadLine(DatasetAttr &datasetAttr) { return (this->*mp_LoadLine)(datasetAttr); }
+  bool LoaderGPGPU::ReadLine(DatasetAttr &datasetAttr) { return (this->*mp_ReadLine)(datasetAttr); }
 
   void LoaderGPGPU::Reset()
   {
@@ -157,12 +157,12 @@ namespace samsung {
     if (m_RW == READ)
     {
       mp_GetCacheline = &LoaderGPGPU::GetCachelineRead;
-      mp_LoadLine = &LoaderGPGPU::LoadLineRead;
+      mp_ReadLine = &LoaderGPGPU::readLineR;
     }
     else if (m_RW == WRITE)
     {
       mp_GetCacheline = &LoaderGPGPU::GetCachelineWrite;
-      mp_LoadLine = &LoaderGPGPU::LoadLineWrite;
+      mp_ReadLine = &LoaderGPGPU::readLineW;
     }
 
     if (m_FileStream.eof())
@@ -172,7 +172,7 @@ namespace samsung {
     }
   }
 
-  bool LoaderGPGPU::LoadLineRead(DatasetAttr &datasetAttr)
+  bool LoaderGPGPU::readLineR(DatasetAttr &datasetAttr)
   {
     std::string line;
     std::getline(m_FileStream, line);
@@ -198,7 +198,7 @@ namespace samsung {
     return true;
   }
 
-  bool LoaderGPGPU::LoadLineWrite(DatasetAttr &datasetAttr)
+  bool LoaderGPGPU::readLineW(DatasetAttr &datasetAttr)
   {
     std::string line;
     std::getline(m_FileStream, line);
@@ -233,7 +233,7 @@ namespace samsung {
     {
       while (true)
       {
-        if (LoadLine(datasetAttr))
+        if (ReadLine(datasetAttr))
         {
           if (!datasetAttr.clock)
             continue;
@@ -301,7 +301,7 @@ namespace samsung {
     {
       while (true)
       {
-        if (LoadLine(datasetAttr))
+        if (ReadLine(datasetAttr))
         {
           if (!datasetAttr.clock)
             continue;

@@ -3,6 +3,7 @@
 
 #include <ios>
 #include <map>
+#include <utility>
 
 #include "./Compressor.h"
 #include "./CompResult.h"
@@ -34,10 +35,10 @@ struct VPCResult : public CompResult
 {
   /*** constructors ***/
   VPCResult(unsigned lineSize)
-    : CompResult(lineSize), m_NumModules(0), m_UncompCount(0) {}
+    : CompResult(lineSize), m_NumModules(0) {}
   
   VPCResult(unsigned lineSize, int numModules)
-    : CompResult(lineSize), m_NumModules(numModules), m_UncompCount(0) 
+    : CompResult(lineSize), m_NumModules(numModules) 
   {
     SetNumModules(numModules);
   }
@@ -47,20 +48,13 @@ struct VPCResult : public CompResult
   {
     CompResult::Update(uncompSize, compSize);
 
-    if (selected == -1)
-    {
-      m_UncompCount++;
-    }
-    else
-    {
-      ClusterStat &clusterStat = m_ClusterStats[selected];
-      clusterStat.originalSize += uncompSize;
-      clusterStat.compressedSize += compSize;
-      clusterStat.compRatio = (double)clusterStat.originalSize / (double)clusterStat.compressedSize;
-      clusterStat.count++;
+    ClusterStat &clusterStat = m_ClusterStats[selected];
+    clusterStat.originalSize += uncompSize;
+    clusterStat.compressedSize += compSize;
+    clusterStat.compRatio = (double)clusterStat.originalSize / (double)clusterStat.compressedSize;
+    clusterStat.count++;
 
-      clusterStat.compSizeHistogram[compSize]++;
-    }
+    clusterStat.compSizeHistogram[compSize]++;
   }
 
   virtual void Print(std::string workloadName = "", std::string filePath = "")
@@ -85,8 +79,7 @@ struct VPCResult : public CompResult
         }
         // first line
         file << fmt::format("workload,total,,,");
-        file << "-1,";  // uncomp
-        for (int i = 0; i < m_NumModules; i++)
+        for (int i = -1; i < m_NumModules; i++)
         {
           file << fmt::format("{},,,", i);
         }
@@ -96,7 +89,7 @@ struct VPCResult : public CompResult
         file << ",";
         file << "original_size,compressed_size,compression_ratio,";
         file << "count,";
-        for (int i = 0; i < m_NumModules; i++)
+        for (int i = -1; i < m_NumModules; i++)
         {
           file << "original_size,compressed_size,compression_ratio,";
         }
@@ -111,9 +104,7 @@ struct VPCResult : public CompResult
     // print result
     // workloadname, originalsize, compressedsize, compratio
     stream << fmt::format("{0},{1},{2},{3},", workloadName, OriginalSize, CompressedSize, CompRatio);
-    // uncompressed count
-    stream << fmt::format("{0},", m_UncompCount);
-    for (int i = 0; i < m_NumModules; i++)
+    for (int i = -1; i < m_NumModules; i++)
     {
       // originalsize, compressedsize, compratio by each module
       ClusterStat &clusterStat = m_ClusterStats[i];
@@ -192,17 +183,16 @@ struct VPCResult : public CompResult
   {
     m_NumModules = numModules;
 
-    for (int i = 0; i < numModules; i++)
+    for (int i = -1; i < numModules; i++)
     {
       // add stat into the list
       ClusterStat stat;
-      m_ClusterStats.push_back(stat);
+      m_ClusterStats.insert(std::make_pair(i, stat));
     }
   }
 
   /*** member variables ***/
-  std::vector<ClusterStat> m_ClusterStats;
-  uint64_t m_UncompCount;
+  std::map<int, ClusterStat> m_ClusterStats;
   int m_NumModules;
 
 };

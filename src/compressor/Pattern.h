@@ -1,10 +1,14 @@
 #ifndef __PATTERN_H__
 #define __PATTERN_H__
 
+#include <utility>
+#include <math.h>
+
+#include <fmt/core.h>
+
 #include "Compressor.h"
 #include "CompResult.h"
 #include "LRU.h"
-#include <fmt/core.h>
 
 namespace comp
 {
@@ -59,6 +63,53 @@ struct PatternResult : public CompResult
     Total += LineSize;
   }
 
+  void UpdateCountMap(std::vector<uint8_t> &dataLine)
+  {
+    auto it = dataLine.begin();
+    for (; it != dataLine.end(); it++)
+    {
+      uint8_t &symbol = *it;
+      auto countIter = SymbolCounts.find(symbol);
+
+      if (countIter != SymbolCounts.end())
+        SymbolCounts[symbol]++;
+      else
+        SymbolCounts.insert(std::make_pair(symbol, 0));
+    }
+  }
+
+  double ComputeEntropy()
+  {
+    uint64_t sum = 0;
+    for (auto it = SymbolCounts.begin(); it != SymbolCounts.end(); it++)
+    {
+      uint64_t &counts = it->second;
+      sum += counts;
+    }
+
+    std::map<uint8_t, double> SymbolProbs;
+    for (auto it = SymbolCounts.begin(); it != SymbolCounts.end(); it++)
+    {
+      const uint8_t &symbol = it->first;
+      uint64_t &counts = it->second;
+      double probability = (double)counts / (double)sum;
+
+      SymbolProbs.insert(std::make_pair(symbol, probability));
+    }
+
+    // entropy = sum(-p * log2(p))
+    double entropy = 0;
+    for (auto it = SymbolProbs.begin(); it != SymbolProbs.end(); it++)
+    {
+      const uint8_t &symbol = it->first;
+      double &probability = it->second;
+
+      entropy += -probability * log2(probability);
+    }
+
+    return entropy;
+  }
+
   virtual void Print(std::string workloadName = "", std::string filePath = "")
   {
     // select file or stdout
@@ -91,7 +142,8 @@ struct PatternResult : public CompResult
         file << "b4d2-implicit,b4d2-explicit,";
         file << "b2d1-implicit,b2d1-explicit,";
         file << "uncomp,";
-        file << "totla,";
+        file << "total,";
+        file << "entropy,";
         file << std::endl;
         file.close();
       }
@@ -100,6 +152,7 @@ struct PatternResult : public CompResult
     }
     std::ostream stream(buff);
 
+    double entropy = ComputeEntropy();
     // print result
     // workloadname, originalsize, compressedsize, compratio
     stream << fmt::format("{},", workloadName);
@@ -109,6 +162,7 @@ struct PatternResult : public CompResult
       stream << fmt::format("{},{},", ImplicitCounts[i], ExplicitCounts[i]);
     stream << fmt::format("{},", U);
     stream << fmt::format("{},", Total);
+    stream << fmt::format("{},", entropy);
     stream << std::endl;
 
     if (file.is_open())
@@ -118,6 +172,7 @@ struct PatternResult : public CompResult
   /*** member variables ***/
   std::vector<uint64_t> ImplicitCounts;
   std::vector<uint64_t> ExplicitCounts;
+  std::map<uint8_t, uint64_t> SymbolCounts;
   uint64_t Z, R, T, U;   // Zeros, Repeated, TemporalLocality, NotDefined
   uint64_t Total;
 };

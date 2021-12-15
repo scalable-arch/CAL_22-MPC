@@ -63,6 +63,9 @@ unsigned Pattern::CompressLine(std::vector<uint8_t> &dataLine)
   // count pattern
   countPattern(dataLine, select);
 
+  // update count map
+  static_cast<PatternResult*>(m_Stat)->UpdateCountMap(dataLine);
+
   // compressedSize + encodingBits
   int compressedSize = (bestCSize + 4);
   return compressedSize;

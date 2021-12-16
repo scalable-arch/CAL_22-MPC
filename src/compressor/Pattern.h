@@ -60,6 +60,10 @@ struct PatternResult : public CompResult
       else
         ExplicitCounts[selected] += baseSize;
     }
+  }
+
+  void UpdateTotal()
+  {
     Total += LineSize;
   }
 
@@ -74,7 +78,7 @@ struct PatternResult : public CompResult
       if (countIter != SymbolCounts.end())
         SymbolCounts[symbol]++;
       else
-        SymbolCounts.insert(std::make_pair(symbol, 0));
+        SymbolCounts.insert(std::make_pair(symbol, 1));
     }
   }
 

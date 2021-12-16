@@ -53,16 +53,16 @@ struct BDIResult : public CompResult
           exit(1);
         }
         // first line
-        file << "workload,original_size,compressed_size,compression_ratio,";
-        file << "zeros,";
-        file << "repeat,";
-        file << "b8d1,";
-        file << "b8d2,";
-        file << "b8d4,";
-        file << "b4d1,";
-        file << "b4d2,";
-        file << "b2d1,";
-        file << "uncomp,";
+        file << "Workload,Original Size,Compressed Size,Compression Ratio,";
+        file << "Zeros,";
+        file << "Repeated,";
+        file << "B8D1,";
+        file << "B8D2,";
+        file << "B8D4,";
+        file << "B4D1,";
+        file << "B4D2,";
+        file << "B2D1,";
+        file << "Uncompressed,";
         file << std::endl;
         file.close();
       }

@@ -135,19 +135,19 @@ struct PatternResult : public CompResult
           exit(1);
         }
         // first line
-        file << "workload,";
-        file << "zeros,";
-        file << "repeat,";
-        file << "templocality,";
-        file << "b8d1-implicit,b8d1-explicit,";
-        file << "b8d2-implicit,b8d2-explicit,";
-        file << "b8d4-implicit,b8d4-explicit,";
-        file << "b4d1-implicit,b4d1-explicit,";
-        file << "b4d2-implicit,b4d2-explicit,";
-        file << "b2d1-implicit,b2d1-explicit,";
-        file << "uncomp,";
-        file << "total,";
-        file << "entropy,";
+        file << "Workload,";
+        file << "Entropy [b],";
+        file << "Zeros [B],";
+        file << "Repeated Line [B],";
+        file << "Temporal Locality [B],";
+        file << "B8D1-Implicit [B],B8D1-Explicit [B],";
+        file << "B8D2-Implicit [B],B8D2-Explicit [B],";
+        file << "B8D4-Implicit [B],B8D4-Explicit [B],";
+        file << "B4D1-Implicit [B],B4D1-Explicit [B],";
+        file << "B4D2-Implicit [B],B4D2-Explicit [B],";
+        file << "B2D1-Implicit [B],B2D1-Explicit [B],";
+        file << "Undefined [B],";
+        file << "Total Size [B],";
         file << std::endl;
         file.close();
       }
@@ -160,13 +160,14 @@ struct PatternResult : public CompResult
     // print result
     // workloadname, originalsize, compressedsize, compratio
     stream << fmt::format("{},", workloadName);
+    // entropy
+    stream << fmt::format("{},", entropy);
     // selection counts
     stream << fmt::format("{},{},{},", Z, R, T);
     for (int i = 0; i < 6; i++)
       stream << fmt::format("{},{},", ImplicitCounts[i], ExplicitCounts[i]);
     stream << fmt::format("{},", U);
     stream << fmt::format("{},", Total);
-    stream << fmt::format("{},", entropy);
     stream << std::endl;
 
     if (file.is_open())

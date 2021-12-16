@@ -111,9 +111,19 @@ int main(int argc, char **argv)
   // print
   std::string workloadName;
   {
+    std::string benchmarkName;
+    std::string appName;
     std::vector<std::string> splitTracePath = strutil::split(tracePath, "/");
-    workloadName = splitTracePath[splitTracePath.size() - 1];
-    strutil::replace_all(workloadName, ".npy", "");
+
+    benchmarkName = splitTracePath[splitTracePath.size() - 2];
+    appName = splitTracePath[splitTracePath.size() - 1];
+
+    // remove extension
+    strutil::replace_all(appName, ".log", "");
+    strutil::replace_all(appName, ".npy", "");
+    strutil::replace_all(appName, ".txt", "");
+
+    workloadName = fmt::format("{0}_{1}", benchmarkName, appName);
   }
   std::cout << fmt::format("comp.ratio: {}", compStat->CompRatio) << std::endl;
 

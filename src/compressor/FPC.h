@@ -56,10 +56,10 @@ struct FPCResult : public CompResult
           exit(1);
         }
         // first line
-        file << fmt::format("workload,original_size,compressed_size,compression_ratio,");
-        file << "total_words,";
+        file << "Workload,Original Size,Compressed Size,Compression Ratio,";
+        file << "Total Words,";
         for (int i = 0; i < 8; i++)
-          file << fmt::format("prefix{},", i);
+          file << fmt::format("Prefix{},", i);
         file << std::endl;
         file.close();
       }

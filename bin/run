@@ -20,6 +20,7 @@ for split in $listdir; do
       break
     fi
     dataset_name=${dataset##*/}
+    dataset_name=${dataset_name%.npy*}
     echo "$split : $dataset_name"
     if [ "$config" == "" ]; then
       $cmd -a $algorithm -i $dataset -o $output_dir/$split/
@@ -30,12 +31,16 @@ for split in $listdir; do
 
   # log files
   for dataset in $dataset_dir/$split/*.log; do
+    if [[ $split == "sdk-8.0" ]]; then
+      continue
+    fi
     if [ ! -f $dataset ]; then
       break
     fi
     dataset_name=${dataset##*/}
+    dataset_name=${dataset_name%.log*}
     echo "$split : $dataset_name"
-    if [ "$config" == "" ]; then
+    if [[ "$config" == "" ]]; then
       $cmd -a $algorithm -i $dataset -o $output_dir/
     else
       $cmd -a $algorithm -i $dataset -c $config -o $output_dir/
@@ -49,6 +54,7 @@ for dataset in $dataset_dir/*.txt; do
     break
   fi
   dataset_name=${dataset##*/}
+  dataset_name=${dataset_name%.txt*}
   echo "$dataset_name"
   if [ "$config" == "" ]; then
     $cmd -a $algorithm -i $dataset -o $output_dir/

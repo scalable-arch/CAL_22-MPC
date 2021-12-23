@@ -34,6 +34,32 @@ struct PatternResult : public CompResult
     : CompResult(lineSize), Total(0), Z(0), R(0), T(0), U(0),
       ImplicitCounts(6, 0), ExplicitCounts(6, 0) {};
 
+  bool IsAllZeros(std::vector<uint8_t> &dataLine)
+  {
+    for (auto it = dataLine.begin(); it != dataLine.end(); it++)
+    {
+      uint8_t &symbol = *it;
+      if (symbol != 0)
+        return false;
+    }
+    return true;
+  }
+
+  bool IsAllWordSame(std::vector<uint8_t> &dataLine)
+  {
+    uint8_t base[4] = { dataLine[0],
+                        dataLine[1],
+                        dataLine[2],
+                        dataLine[3] };
+    for (int i = 4; i < dataLine.size(); i++)
+    {
+      uint8_t &symbol = dataLine[i];
+      if (symbol != dataLine[i % 4])
+        return false;
+    }
+    return true;
+  }
+
   // count bytes
   void UpdateStat(int selected, unsigned baseSize=1, bool isImplicit=false)
   {
@@ -69,8 +95,7 @@ struct PatternResult : public CompResult
 
   void UpdateCountMap(std::vector<uint8_t> &dataLine)
   {
-    auto it = dataLine.begin();
-    for (; it != dataLine.end(); it++)
+    for (auto it = dataLine.begin(); it != dataLine.end(); it++)
     {
       uint8_t &symbol = *it;
       auto countIter = SymbolCounts.find(symbol);
@@ -80,19 +105,33 @@ struct PatternResult : public CompResult
       else
         SymbolCounts.insert(std::make_pair(symbol, 1));
     }
+
+    if (!(IsAllZeros(dataLine) || IsAllWordSame(dataLine)))
+    {
+      for (auto it = dataLine.begin(); it != dataLine.end(); it++)
+      {
+        uint8_t &symbol = *it;
+        auto countIter = SymbolCountsExceptAllZerosAllWordSame.find(symbol);
+
+        if (countIter != SymbolCountsExceptAllZerosAllWordSame.end())
+          SymbolCountsExceptAllZerosAllWordSame[symbol]++;
+        else
+          SymbolCountsExceptAllZerosAllWordSame.insert(std::make_pair(symbol, 1));
+      }
+    }
   }
 
-  double ComputeEntropy()
+  double ComputeEntropy(std::map<uint8_t, uint64_t> &symbolCounts)
   {
     uint64_t sum = 0;
-    for (auto it = SymbolCounts.begin(); it != SymbolCounts.end(); it++)
+    for (auto it = symbolCounts.begin(); it != symbolCounts.end(); it++)
     {
       uint64_t &counts = it->second;
       sum += counts;
     }
 
     std::map<uint8_t, double> SymbolProbs;
-    for (auto it = SymbolCounts.begin(); it != SymbolCounts.end(); it++)
+    for (auto it = symbolCounts.begin(); it != symbolCounts.end(); it++)
     {
       const uint8_t &symbol = it->first;
       uint64_t &counts = it->second;
@@ -136,7 +175,8 @@ struct PatternResult : public CompResult
         }
         // first line
         file << "Workload,";
-        file << "Entropy [b],";
+        file << "Entropy [b/B],";
+        file << "Entropy except AllZeros AllWordSame [b/B],";
         file << "Zeros [B],";
         file << "Repeated Line [B],";
         file << "Temporal Locality [B],";
@@ -156,12 +196,14 @@ struct PatternResult : public CompResult
     }
     std::ostream stream(buff);
 
-    double entropy = ComputeEntropy();
+    double entropy = ComputeEntropy(SymbolCounts);
+    double entropyExceptAllZerosAllWordSame = ComputeEntropy(SymbolCountsExceptAllZerosAllWordSame);
     // print result
     // workloadname, originalsize, compressedsize, compratio
     stream << fmt::format("{},", workloadName);
     // entropy
     stream << fmt::format("{},", entropy);
+    stream << fmt::format("{},", entropyExceptAllZerosAllWordSame);
     // selection counts
     stream << fmt::format("{},{},{},", Z, R, T);
     for (int i = 0; i < 6; i++)
@@ -178,6 +220,7 @@ struct PatternResult : public CompResult
   std::vector<uint64_t> ImplicitCounts;
   std::vector<uint64_t> ExplicitCounts;
   std::map<uint8_t, uint64_t> SymbolCounts;
+  std::map<uint8_t, uint64_t> SymbolCountsExceptAllZerosAllWordSame;
   uint64_t Z, R, T, U;   // Zeros, Repeated, TemporalLocality, NotDefined
   uint64_t Total;
 };

@@ -139,7 +139,7 @@ protected:
 
 }
 
-namespace samsung {
+namespace apsim {
 
 #define NUM_CH 4
 #define BURST_LEN 2

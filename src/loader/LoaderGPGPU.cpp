@@ -97,7 +97,7 @@ namespace gpgpusim {
   }
 }
 
-namespace samsung {
+namespace apsim {
   /*** constructors ***/
   LoaderGPGPU::LoaderGPGPU(const char *filePath)
     : Loader(filePath), m_RW(NA), m_LineSize(ACCESS_GRAN) { Reset(); }

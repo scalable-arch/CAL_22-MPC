@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   else if (strutil::ends_with(tracePath, ".npy"))
     loader = new trace::LoaderNPY(tracePath);
   else if (strutil::ends_with(tracePath, ".txt"))
-    loader = new trace::samsung::LoaderGPGPU(tracePath, REQ_SIZE);
+    loader = new trace::apsim::LoaderGPGPU(tracePath, REQ_SIZE);
   else
     assert(false && "Unsupported extension.");
 
@@ -170,8 +170,8 @@ comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loa
   trace::MemReq_t *memReq;
   if (dynamic_cast<trace::gpgpusim::LoaderGPGPU*>(loader) != nullptr)
     memReq = new trace::gpgpusim::MemReqGPU_t;
-  else if (dynamic_cast<trace::samsung::LoaderGPGPU*>(loader) != nullptr)
-    memReq = new trace::samsung::MemReqGPU_t;
+  else if (dynamic_cast<trace::apsim::LoaderGPGPU*>(loader) != nullptr)
+    memReq = new trace::apsim::MemReqGPU_t;
   else if (dynamic_cast<trace::LoaderNPY*>(loader) != nullptr)
     memReq = new trace::MemReq_t;
 

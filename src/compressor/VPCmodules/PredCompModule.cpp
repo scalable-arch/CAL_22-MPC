@@ -24,4 +24,13 @@ Binary PredCompModule::CompressLine(std::vector<uint8_t> &dataLine, int nothing)
 
   return scanned;
 }
+
+double PredCompModule::GetMAE(std::vector<uint8_t> &dataLine)
+{
+  return mp_ResidueModule->GetMAE(dataLine);
+}
+double PredCompModule::GetMSE(std::vector<uint8_t> &dataLine)
+{
+  return mp_ResidueModule->GetMSE(dataLine);
+}
 }

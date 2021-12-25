@@ -35,10 +35,14 @@ struct VPCResult : public CompResult
 {
   /*** constructors ***/
   VPCResult(unsigned lineSize)
-    : CompResult(lineSize), m_NumModules(0) {}
+    : CompResult(lineSize),
+      m_SumMAE(0), m_MAE(0),
+      m_SumMSE(0), m_MSE(0),
+      m_NumModules(0) {}
   
   VPCResult(unsigned lineSize, int numModules)
-    : CompResult(lineSize), m_NumModules(numModules) 
+    : CompResult(lineSize), m_MAE(0), m_MSE(0),
+      m_NumModules(numModules) 
   {
     SetNumModules(numModules);
   }
@@ -55,6 +59,16 @@ struct VPCResult : public CompResult
     clusterStat.count++;
 
     clusterStat.compSizeHistogram[compSize]++;
+  }
+
+  void UpdateResidueStat(double mae, double mse)
+  {
+    m_SumMAE += mae;
+    m_SumMSE += mse;
+
+    uint64_t numLines = this->OriginalSize / this->LineSize;
+    m_MAE = m_SumMAE / (double)numLines;
+    m_MSE = m_SumMSE / (double)numLines;
   }
 
   virtual void Print(std::string workloadName = "", std::string filePath = "")
@@ -138,6 +152,7 @@ struct VPCResult : public CompResult
         }
         // first line
         file << fmt::format("workload,");
+        file << fmt::format("mae,mse,");
         for (int i = 0; i < m_NumModules; i++)
         {
           file << fmt::format("{},", i);
@@ -150,6 +165,7 @@ struct VPCResult : public CompResult
 
         // second line
         file << ",";
+        file << ",,";
         for (int i = 0; i < m_NumModules; i++)
         {
           for (int j = 0; j < COMPSIZELIMIT; j++)
@@ -167,6 +183,8 @@ struct VPCResult : public CompResult
 
     // workloadname
     stream << fmt::format("{0},", workloadName);
+    // mae, mse
+    stream << fmt::format("{},{},", m_MAE, m_MSE);
     // histogram by each module
     for (int i = 0; i < m_NumModules; i++)
     {
@@ -193,8 +211,9 @@ struct VPCResult : public CompResult
 
   /*** member variables ***/
   std::map<int, ClusterStat> m_ClusterStats;
+  double m_SumMAE, m_MAE;
+  double m_SumMSE, m_MSE;
   int m_NumModules;
-
 };
 
 class VPC : public Compressor

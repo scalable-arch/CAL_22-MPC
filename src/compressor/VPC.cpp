@@ -165,6 +165,12 @@ unsigned VPC::compressLineOnlyAllZero(std::vector<uint8_t> &dataLine)
     // update compression stat
     static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
 
+    // update residue stat
+    PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
+    double mae = predCompModule->GetMAE(dataLine);
+    double mse = predCompModule->GetMSE(dataLine);
+    static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse);
+
     return compressedLineSize;
   }
 }

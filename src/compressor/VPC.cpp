@@ -100,10 +100,13 @@ unsigned VPC::compressLineAllWordSame(std::vector<uint8_t> &dataLine)
     static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
 
     // update residue stat
-    PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
-    double mae = predCompModule->GetMAE(dataLine);
-    double mse = predCompModule->GetMSE(dataLine);
-    static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse);
+    if (chosenCompModule != -1)
+    {
+      PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
+      double mae = predCompModule->GetMAE(dataLine);
+      double mse = predCompModule->GetMSE(dataLine);
+      static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse);
+    }
 
     return compressedLineSize;
   }
@@ -172,10 +175,13 @@ unsigned VPC::compressLineOnlyAllZero(std::vector<uint8_t> &dataLine)
     static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
 
     // update residue stat
-    PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
-    double mae = predCompModule->GetMAE(dataLine);
-    double mse = predCompModule->GetMSE(dataLine);
-    static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse);
+    if (chosenCompModule != -1)
+    {
+      PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
+      double mae = predCompModule->GetMAE(dataLine);
+      double mse = predCompModule->GetMSE(dataLine);
+      static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse);
+    }
 
     return compressedLineSize;
   }

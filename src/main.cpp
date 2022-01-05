@@ -169,21 +169,40 @@ comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loa
   // and init MemReq_t
   trace::MemReq_t *memReq;
   if (dynamic_cast<trace::gpgpusim::LoaderGPGPU*>(loader) != nullptr)
-    memReq = new trace::gpgpusim::MemReqGPU_t;
-  else if (dynamic_cast<trace::apsim::LoaderGPGPU*>(loader) != nullptr)
-    memReq = new trace::apsim::MemReqGPU_t;
-  else if (dynamic_cast<trace::LoaderNPY*>(loader) != nullptr)
-    memReq = new trace::MemReq_t;
-
-  // compress
-  while (1)
   {
-    memReq = loader->GetCacheline(memReq);
-    if (memReq->isEnd) break;
-    std::vector<uint8_t> &dataLine = memReq->data;
-    compressor->CompressLine(dataLine);
+    memReq = new trace::gpgpusim::MemReqGPU_t;
+
+    // compress
+    while (1)
+    {
+      memReq = loader->GetCacheline(memReq);
+      if (memReq->isEnd) break;
+      if (!(static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_R
+            || static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_W))
+        continue;
+      std::vector<uint8_t> &dataLine = memReq->data;
+      compressor->CompressLine(dataLine);
+    }
+  }
+  else
+  {
+    if (dynamic_cast<trace::apsim::LoaderGPGPU*>(loader) != nullptr)
+      memReq = new trace::apsim::MemReqGPU_t;
+    else if (dynamic_cast<trace::LoaderNPY*>(loader) != nullptr)
+      memReq = new trace::MemReq_t;
+
+    // compress
+    while (1)
+    {
+      memReq = loader->GetCacheline(memReq);
+      if (memReq->isEnd) break;
+      std::vector<uint8_t> &dataLine = memReq->data;
+      compressor->CompressLine(dataLine);
+    }
   }
 
   comp::CompResult *compStat = compressor->GetResult();
   return compStat;
 }
+
+

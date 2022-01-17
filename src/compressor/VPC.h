@@ -65,11 +65,12 @@ struct VPCResult : public CompResult
     double &resultMAE = m_MAE[chosenCompModule];
     double &sumMSE = m_SumMSE[chosenCompModule];
     double &resultMSE = m_MSE[chosenCompModule];
+    uint64_t &numLines = m_NumLines[chosenCompModule];
 
     sumMAE += mae;
     sumMSE += mse;
 
-    uint64_t numLines = this->OriginalSize / this->LineSize;
+    numLines++;
     resultMAE = sumMAE / (double)numLines;
     resultMSE = sumMSE / (double)numLines;
   }
@@ -223,6 +224,8 @@ struct VPCResult : public CompResult
       m_MAE.insert(std::make_pair(i, 0));
       m_SumMSE.insert(std::make_pair(i, 0));
       m_MSE.insert(std::make_pair(i, 0));
+
+      m_NumLines.insert(std::make_pair(i, 0));
     }
   }
 
@@ -230,6 +233,7 @@ struct VPCResult : public CompResult
   std::map<int, ClusterStat> m_ClusterStats;
   std::map<int, double> m_SumMAE, m_MAE;
   std::map<int, double> m_SumMSE, m_MSE;
+  std::map<int, uint64_t> m_NumLines;     // this is for computing MAE, MSE
   int m_NumModules;
 };
 

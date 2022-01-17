@@ -52,7 +52,7 @@ double ResidueModule::GetMAE(std::vector<uint8_t> &dataLine)
     uint8_t residue = dataLine[i] - predictedLine[i];
     mae += abs((double)residue);
   }
-  mae /= (lineSize - 1);
+  mae /= (double)lineSize;
   return mae;
 }
 
@@ -68,7 +68,7 @@ double ResidueModule::GetMSE(std::vector<uint8_t> &dataLine)
     uint8_t residue = dataLine[i] - predictedLine[i];
     mse += pow((double)residue, 2);
   }
-  mse /= (lineSize - 1);
+  mse /= (double)lineSize;
   return mse;
 }
 

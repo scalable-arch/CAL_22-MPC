@@ -435,8 +435,8 @@ void VPC::updateResidueStat(std::vector<uint8_t> &dataLine, const int chosenComp
       mse += pow((double)residue, 2);
     }
 
-    mae /= (lineSize);
-    mse /= (lineSize);
+    mae /= (double)lineSize;
+    mse /= (double)lineSize;
   }
 
   static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse, chosenCompModule);

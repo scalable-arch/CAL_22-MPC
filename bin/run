@@ -12,40 +12,34 @@ config=$4
 cmd="./compressor"
 
 listdir=$( ls -d $dataset_dir/* )
-for split in $listdir; do
-  split=${split##*/}
   # npy files
-  for dataset in $dataset_dir/$split/*set.npy; do
+  for dataset in $dataset_dir/*.npy; do
     if [ ! -f $dataset ]; then
       break
     fi
     dataset_name=${dataset##*/}
     dataset_name=${dataset_name%.npy*}
-    echo "$split : $dataset_name"
+    echo "$dataset_name"
     if [ "$config" == "" ]; then
-      $cmd -a $algorithm -i $dataset -o $output_dir/$split/
-    else
-      $cmd -a $algorithm -i $dataset -c $config -o $output_dir/$split/
-    fi
-  done
-
-  # log files
-  for dataset in $dataset_dir/$split/*.log; do
-    if [[ $split == "sdk-8.0" ]]; then
-      continue
-    fi
-    if [ ! -f $dataset ]; then
-      break
-    fi
-    dataset_name=${dataset##*/}
-    dataset_name=${dataset_name%.log*}
-    echo "$split : $dataset_name"
-    if [[ "$config" == "" ]]; then
       $cmd -a $algorithm -i $dataset -o $output_dir/
     else
       $cmd -a $algorithm -i $dataset -c $config -o $output_dir/
     fi
   done
+
+# log files
+for dataset in $dataset_dir/*.log; do
+  if [ ! -f $dataset ]; then
+    break
+  fi
+  dataset_name=${dataset##*/}
+  dataset_name=${dataset_name%.log*}
+  echo "$dataset_name"
+  if [[ "$config" == "" ]]; then
+    $cmd -a $algorithm -i $dataset -o $output_dir/
+  else
+    $cmd -a $algorithm -i $dataset -c $config -o $output_dir/
+  fi
 done
 
 # txt files

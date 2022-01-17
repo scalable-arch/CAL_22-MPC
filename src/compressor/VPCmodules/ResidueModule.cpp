@@ -47,16 +47,10 @@ double ResidueModule::GetMAE(std::vector<uint8_t> &dataLine)
   const int lineSize = predictedLine.GetCachelineSize();
 
   double mae = 0;
-  uint8_t root = dataLine[m_RootIndex];
   for (int i = 0; i < lineSize; i++)
   {
-    if (i == m_RootIndex)
-      continue;
-    else
-    {
-      uint8_t residue = dataLine[i] - predictedLine[i];
-      mae += abs((double)residue);
-    }
+    uint8_t residue = dataLine[i] - predictedLine[i];
+    mae += abs((double)residue);
   }
   mae /= (lineSize - 1);
   return mae;
@@ -69,16 +63,10 @@ double ResidueModule::GetMSE(std::vector<uint8_t> &dataLine)
   const int lineSize = predictedLine.GetCachelineSize();
 
   double mse = 0;
-  uint8_t root = dataLine[m_RootIndex];
   for (int i = 0; i < lineSize; i++)
   {
-    if (i == m_RootIndex)
-      continue;
-    else
-    {
-      uint8_t residue = dataLine[i] - predictedLine[i];
-      mse += pow((double)residue, 2);
-    }
+    uint8_t residue = dataLine[i] - predictedLine[i];
+    mse += pow((double)residue, 2);
   }
   mse /= (lineSize - 1);
   return mse;

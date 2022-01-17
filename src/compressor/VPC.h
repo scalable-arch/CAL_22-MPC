@@ -36,12 +36,10 @@ struct VPCResult : public CompResult
   /*** constructors ***/
   VPCResult(unsigned lineSize)
     : CompResult(lineSize),
-      m_SumMAE(0), m_MAE(0),
-      m_SumMSE(0), m_MSE(0),
       m_NumModules(0) {}
   
   VPCResult(unsigned lineSize, int numModules)
-    : CompResult(lineSize), m_MAE(0), m_MSE(0),
+    : CompResult(lineSize), 
       m_NumModules(numModules) 
   {
     SetNumModules(numModules);
@@ -61,14 +59,19 @@ struct VPCResult : public CompResult
     clusterStat.compSizeHistogram[compSize]++;
   }
 
-  void UpdateResidueStat(double mae, double mse)
+  void UpdateResidueStat(double mae, double mse, const int chosenCompModule)
   {
-    m_SumMAE += mae;
-    m_SumMSE += mse;
+    double &sumMAE = m_SumMAE[chosenCompModule];
+    double &resultMAE = m_MAE[chosenCompModule];
+    double &sumMSE = m_SumMSE[chosenCompModule];
+    double &resultMSE = m_MSE[chosenCompModule];
+
+    sumMAE += mae;
+    sumMSE += mse;
 
     uint64_t numLines = this->OriginalSize / this->LineSize;
-    m_MAE = m_SumMAE / (double)numLines;
-    m_MSE = m_SumMSE / (double)numLines;
+    resultMAE = sumMAE / (double)numLines;
+    resultMSE = sumMSE / (double)numLines;
   }
 
   virtual void Print(std::string workloadName = "", std::string filePath = "")
@@ -152,7 +155,10 @@ struct VPCResult : public CompResult
         }
         // first line
         file << fmt::format("workload,");
-        file << fmt::format("mae,mse,");
+        for (int i = -1; i < m_NumModules; i++)
+        {
+          file << fmt::format("{},,",i);
+        }
         for (int i = 0; i < m_NumModules; i++)
         {
           file << fmt::format("{},", i);
@@ -165,7 +171,10 @@ struct VPCResult : public CompResult
 
         // second line
         file << ",";
-        file << ",,";
+        for (int i = -1; i < m_NumModules; i++)
+        {
+          file << fmt::format("mae,mse,");
+        }
         for (int i = 0; i < m_NumModules; i++)
         {
           for (int j = 0; j < COMPSIZELIMIT; j++)
@@ -184,7 +193,10 @@ struct VPCResult : public CompResult
     // workloadname
     stream << fmt::format("{0},", workloadName);
     // mae, mse
-    stream << fmt::format("{},{},", m_MAE, m_MSE);
+    for (int i = -1; i < m_NumModules; i++)
+    {
+      stream << fmt::format("{},{},", m_MAE[i], m_MSE[i]);
+    }
     // histogram by each module
     for (int i = 0; i < m_NumModules; i++)
     {
@@ -206,13 +218,18 @@ struct VPCResult : public CompResult
       // add stat into the list
       ClusterStat stat;
       m_ClusterStats.insert(std::make_pair(i, stat));
+
+      m_SumMAE.insert(std::make_pair(i, 0));
+      m_MAE.insert(std::make_pair(i, 0));
+      m_SumMSE.insert(std::make_pair(i, 0));
+      m_MSE.insert(std::make_pair(i, 0));
     }
   }
 
   /*** member variables ***/
   std::map<int, ClusterStat> m_ClusterStats;
-  double m_SumMAE, m_MAE;
-  double m_SumMSE, m_MSE;
+  std::map<int, double> m_SumMAE, m_MAE;
+  std::map<int, double> m_SumMSE, m_MSE;
   int m_NumModules;
 };
 
@@ -239,6 +256,12 @@ private :
   void parseConfig(std::string &configPath);
   unsigned compressLineOnlyAllZero(std::vector<uint8_t> &dataLine);
   unsigned compressLineAllWordSame(std::vector<uint8_t> &dataLine);
+
+  unsigned checkAllZeros(const int chosenCompModule, bool &isAllZeros, std::vector<uint8_t> &dataLine);
+  unsigned checkAllWordSame(const int chosenCompModule, bool &isAllWordSame, std::vector<uint8_t> &dataLine);
+  unsigned checkOtherPatterns(const int numStartingModule, std::vector<uint8_t> &dataLine);
+  void updateResidueStat(std::vector<uint8_t> &dataLine, const int chosenCompModule);
+
 
 private:
   /*** members ***/

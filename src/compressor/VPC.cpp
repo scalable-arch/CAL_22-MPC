@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <json/json.h>
+#include "Compressor.h"
 #include "VPC.h"
 #include "VPCmodules/AllWordSameModule.h"
 #include "VPCmodules/AllZeroModule.h"
@@ -25,165 +26,46 @@ unsigned VPC::CompressLine(std::vector<uint8_t> &dataLine)
 
 unsigned VPC::compressLineAllWordSame(std::vector<uint8_t> &dataLine)
 {
-  int chosenCompModule = -1;
-  const unsigned uncompressedLineSize = dataLine.size() * BYTE;
-  unsigned compressedLineSize = uncompressedLineSize;
-
   // Check ALLZERO
   {
-    AllZeroModule *allZeroModule = static_cast<AllZeroModule*>(m_CompModules[0]);
-    unsigned compressedSize = allZeroModule->CompressLine(dataLine);
+    bool isAllZeros;
+    unsigned compressedSize = checkAllZeros(0, isAllZeros, dataLine);
 
-    if (compressedSize == 0) 
-    {
-      chosenCompModule = 0;
-      compressedLineSize = m_EncodingBits[chosenCompModule];
-      static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
-      return compressedLineSize;
-    }
+    if (isAllZeros)
+      return compressedSize;
   }
 
   // Check ALLWORDSAME
   {
-    AllWordSameModule *allWordSameModule = static_cast<AllWordSameModule*>(m_CompModules[1]);
-    unsigned compressedSize = allWordSameModule->CompressLine(dataLine);
+    bool isAllWordSame;
+    unsigned compressedSize = checkAllWordSame(1, isAllWordSame, dataLine);
 
-    if (compressedSize == 4*BYTE)
-    {
-      chosenCompModule = 1;
-      compressedLineSize = compressedSize + m_EncodingBits[chosenCompModule];
-      static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
-      return compressedLineSize;
-    }
+    if (isAllWordSame)
+      return compressedSize;
   }
-  
+
   // Check other patterns
   {
-    int numMaxScannedZRL = 0;
-    Binary maxScanned;
-    for (int i = 2; i < m_NumModules; i++)
-    {
-      PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[i]);
-      Binary scanned = predCompModule->CompressLine(dataLine, 0);
-
-      // count zrl
-      int numScannedZRL = 0;
-      for (int row = 0; row <scanned.GetRowSize(); row++)
-      {
-        if (scanned.IsRowZeros(row))
-          numScannedZRL++;
-        else
-          break;
-      }
-
-      if (numMaxScannedZRL <= numScannedZRL)
-      {
-        chosenCompModule = i;
-        numMaxScannedZRL = numScannedZRL;
-        maxScanned = scanned;
-      }
-    }
-
-    int compressedSize = m_CommonEncoder.ProcessLine(maxScanned);
-    if (compressedSize < uncompressedLineSize)
-    {
-      compressedLineSize = compressedSize;
-    }
-    else
-    {
-      chosenCompModule = -1;
-      compressedLineSize = uncompressedLineSize;
-    }
-    compressedLineSize += m_EncodingBits[chosenCompModule];
-
-    // update compression stat
-    static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
-
-    // update residue stat
-    if (chosenCompModule != -1)
-    {
-      PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
-      double mae = predCompModule->GetMAE(dataLine);
-      double mse = predCompModule->GetMSE(dataLine);
-      static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse);
-    }
-
-    return compressedLineSize;
+    unsigned compressedSize = checkOtherPatterns(2, dataLine);
+    return compressedSize;
   }
 }
 
 unsigned VPC::compressLineOnlyAllZero(std::vector<uint8_t> &dataLine)
 {
-  int chosenCompModule = -1;
-  const unsigned uncompressedLineSize = dataLine.size() * BYTE;
-  unsigned compressedLineSize = uncompressedLineSize;
-
   // Check ALLZERO
   {
-    AllZeroModule *allZeroModule = static_cast<AllZeroModule*>(m_CompModules[0]);
-    unsigned compressedSize = allZeroModule->CompressLine(dataLine);
+    bool isAllZeros;
+    unsigned compressedSize = checkAllZeros(0, isAllZeros, dataLine);
 
-    if (compressedSize == 0) 
-    {
-      chosenCompModule = 0;
-      compressedLineSize = m_EncodingBits[chosenCompModule];
-      static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
-      return compressedLineSize;
-    }
+    if (isAllZeros)
+      return compressedSize;
   }
 
   // Check other patterns
   {
-    int numMaxScannedZRL = 0;
-    Binary maxScanned;
-    for (int i = 1; i < m_NumModules; i++)
-    {
-      PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[i]);
-      Binary scanned = predCompModule->CompressLine(dataLine, 0);
-
-      // count zrl
-      int numScannedZRL = 0;
-      for (int row = 0; row <scanned.GetRowSize(); row++)
-      {
-        if (scanned.IsRowZeros(row))
-          numScannedZRL++;
-        else
-          break;
-      }
-
-      if (numMaxScannedZRL <= numScannedZRL)
-      {
-        chosenCompModule = i;
-        numMaxScannedZRL = numScannedZRL;
-        maxScanned = scanned;
-      }
-    }
-
-    int compressedSize = m_CommonEncoder.ProcessLine(maxScanned);
-    if (compressedSize < uncompressedLineSize)
-    {
-      compressedLineSize = compressedSize;
-    }
-    else
-    {
-      chosenCompModule = -1;
-      compressedLineSize = uncompressedLineSize;
-    }
-    compressedLineSize += m_EncodingBits[chosenCompModule];
-
-    // update compression stat
-    static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
-
-    // update residue stat
-    if (chosenCompModule != -1)
-    {
-      PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
-      double mae = predCompModule->GetMAE(dataLine);
-      double mse = predCompModule->GetMSE(dataLine);
-      static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse);
-    }
-
-    return compressedLineSize;
+    unsigned compressedSize = checkOtherPatterns(1, dataLine);
+    return compressedSize;
   }
 }
 
@@ -445,6 +327,119 @@ void VPC::parseConfig(std::string &configPath)
     }
   }
 //  static_cast<VPCResult*>(m_Stat)->SetNumModules(m_NumModules);
+}
+
+unsigned VPC::checkAllZeros(const int chosenCompModule, bool &isAllZeros, std::vector<uint8_t> &dataLine)
+{
+  isAllZeros = false;
+  const unsigned uncompressedSize = dataLine.size() * BYTE;
+  AllZeroModule *allZeroModule = static_cast<AllZeroModule*>(m_CompModules[chosenCompModule]);
+  unsigned compressedSize = allZeroModule->CompressLine(dataLine);
+
+  if (compressedSize == 0) 
+  {
+    isAllZeros = true;
+    compressedSize += m_EncodingBits[chosenCompModule];
+    static_cast<VPCResult*>(m_Stat)->Update(uncompressedSize, compressedSize, chosenCompModule);
+  }
+
+  return compressedSize;
+}
+
+unsigned VPC::checkAllWordSame(const int chosenCompModule, bool &isAllWordSame, std::vector<uint8_t> &dataLine)
+{
+  isAllWordSame = false;
+  const unsigned uncompressedSize = dataLine.size() * BYTE;
+  AllWordSameModule *allWordSameModule = static_cast<AllWordSameModule*>(m_CompModules[1]);
+  unsigned compressedSize = allWordSameModule->CompressLine(dataLine);
+
+  if (compressedSize == 4*BYTE)
+  {
+    isAllWordSame = true;
+    compressedSize += m_EncodingBits[chosenCompModule];
+    static_cast<VPCResult*>(m_Stat)->Update(uncompressedSize, compressedSize, chosenCompModule);
+  }
+
+  return compressedSize;
+}
+
+unsigned VPC::checkOtherPatterns(const int numStartingModule, std::vector<uint8_t> &dataLine)
+{
+  int chosenCompModule = -1;
+  const unsigned uncompressedLineSize = dataLine.size() * BYTE;
+  unsigned compressedLineSize = uncompressedLineSize;
+
+  int numMaxScannedZRL = 0;
+  Binary maxScanned;
+  for (int i = numStartingModule; i < m_NumModules; i++)
+  {
+    PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[i]);
+    Binary scanned = predCompModule->CompressLine(dataLine, 0);
+
+    // count zrl
+    int numScannedZRL = 0;
+    for (int row = 0; row <scanned.GetRowSize(); row++)
+    {
+      if (scanned.IsRowZeros(row))
+        numScannedZRL++;
+      else
+        break;
+    }
+
+    if (numMaxScannedZRL <= numScannedZRL)
+    {
+      chosenCompModule = i;
+      numMaxScannedZRL = numScannedZRL;
+      maxScanned = scanned;
+    }
+  }
+
+  int compressedSize = m_CommonEncoder.ProcessLine(maxScanned);
+  if (compressedSize < uncompressedLineSize)
+  {
+    compressedLineSize = compressedSize;
+  }
+  else
+  {
+    chosenCompModule = -1;
+    compressedLineSize = uncompressedLineSize;
+  }
+  compressedLineSize += m_EncodingBits[chosenCompModule];
+
+  // update compression stat
+  static_cast<VPCResult*>(m_Stat)->Update(uncompressedLineSize, compressedLineSize, chosenCompModule);
+  // update residue stat
+  updateResidueStat(dataLine, chosenCompModule);
+
+  return compressedLineSize;
+}
+
+void VPC::updateResidueStat(std::vector<uint8_t> &dataLine, const int chosenCompModule)
+{
+  double mae = 0;
+  double mse = 0;
+  const int lineSize = dataLine.size();
+
+  if (chosenCompModule != -1)
+  {
+    PredCompModule *predCompModule = static_cast<PredCompModule*>(m_CompModules[chosenCompModule]);
+    mae = predCompModule->GetMAE(dataLine);
+    mse = predCompModule->GetMSE(dataLine);
+  }
+  else
+  {
+    for (int i = 0; i < lineSize; i++)
+    {
+      uint8_t residue = dataLine[i];
+      mae += abs((double)residue);
+      mse += pow((double)residue, 2);
+    }
+
+    mae /= (lineSize);
+    mse /= (lineSize);
+  }
+
+  static_cast<VPCResult*>(m_Stat)->UpdateResidueStat(mae, mse, chosenCompModule);
 }
 
 }

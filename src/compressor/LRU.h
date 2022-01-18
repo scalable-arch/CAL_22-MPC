@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <boost/functional/hash.hpp>
 
-#define CACHESIZE 65535
+#define CACHESIZE 16777215 // 2^24 - 1
 
 using namespace std;
 

@@ -32,14 +32,6 @@ struct BPCResult : public CompResult
     Counts[selected]++;
   }
 
-//  virtual void Update(unsigned uncompSize, unsigned compSize, int selected)
-//  {
-//    CompResult::Update(uncompSize, compSize);
-//
-//    TotalWords++;
-//    Counts[selected]++;
-//  }
-
   virtual void Print(std::string workloadName = "", std::string filePath = "")
   {
     // select file or stdout
@@ -99,7 +91,7 @@ public:
   /*** constructor ***/
   BPC(unsigned lineSize)
   {
-    m_Stat = new CompResult(lineSize);
+    m_Stat = new BPCResult(lineSize);
     m_Stat->CompressorName = "Bit-Plane Compression";
   }
 

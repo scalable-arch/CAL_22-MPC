@@ -102,6 +102,8 @@ unsigned BPC::encodeFirst(int64_t base)
 
 unsigned BPC::encodeDeltas(int32_t* DBP, int32_t* DBX)
 {
+  BPCResult* m_stat = static_cast<BPCResult*>(m_Stat);
+
   unsigned length = 0;
   unsigned runLength = 0;
   bool firstNZDBX = false;
@@ -116,22 +118,27 @@ unsigned BPC::encodeDeltas(int32_t* DBP, int32_t* DBX)
     {
       // Z-RLE
       if (runLength > 0) 
+      {
         length += ZRL_CODE_SIZE[runLength];
+        m_stat->UpdatePattern(runLength, (int)BPCPattern::ZRLE);
+      }
       runLength = 0;
 
       // zero DBP
       if (DBP[i] == 0)
       {
         length += zeroDBPSize;
+        m_stat->UpdatePattern(1, (int)BPCPattern::Zero);
       }
       // All 1s
       else if (DBX[i] == 0x7fffffff)
       {
         length += allOneSize;
+        m_stat->UpdatePattern(1, (int)BPCPattern::AllOnes);
       }
       else
       {
-        // find where 1s are
+        // find where the 1s are
         int oneCnt = 0;
         for (int j = 0; j < 32; j++)
           if ((DBX[i] >> j) & 1)
@@ -148,19 +155,31 @@ unsigned BPC::encodeDeltas(int32_t* DBP, int32_t* DBX)
 
         // single 1
         if (oneCnt == 1)
+        {
           length += singleOneSize;
+          m_stat->UpdatePattern(1, (int)BPCPattern::SingleOne);
+        }
         // consec double 1s
         else if ((oneCnt == 2) && (twoDistance == 1))
+        {
           length += consecutiveDoubleOneSize;
+          m_stat->UpdatePattern(1, (int)BPCPattern::ConsecTwoOnes);
+        }
         // uncompressible
         else
+        {
           length += 32;
+          m_stat->UpdatePattern(1, (int)BPCPattern::Uncomp);
+        }
       }
     }
   }
   // final Z-RLE
   if (runLength > 0)
+  {
     length += ZRL_CODE_SIZE[runLength];
+    m_stat->UpdatePattern(runLength, (int)BPCPattern::ZRLE);
+  }
 
   return length;
 }

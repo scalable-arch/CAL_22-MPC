@@ -9,6 +9,8 @@ unsigned CPACK::CompressLine(std::vector<uint8_t> &dataLine)
   unsigned uncompSize = dataLine.size() * BYTE;
   unsigned currCSize = 0;
 
+  CPACKResult* m_stat = static_cast<CPACKResult*>(m_Stat);
+
   for (int i = 0; i < dataLine.size() / WORDSIZE; i++)
   {
     uint8_t word[WORDSIZE] = {
@@ -22,11 +24,13 @@ unsigned CPACK::CompressLine(std::vector<uint8_t> &dataLine)
       if (word[3] == 0)
       {
         currCSize += m_PatternLength[0];
+        m_stat->UpdatePattern((int)CPACKPattern::ZZZZ);
       }
       // pattern zzzx (1100)B
       else
       {
         currCSize += m_PatternLength[4];
+        m_stat->UpdatePattern((int)CPACKPattern::ZZZX);
       }
       continue;
     }
@@ -48,17 +52,20 @@ unsigned CPACK::CompressLine(std::vector<uint8_t> &dataLine)
           if (word[3] == dictWord[3])
           {
             currCSize += m_PatternLength[2];
+            m_stat->UpdatePattern((int)CPACKPattern::MMMM);
           }
           // pattern mmmx (1110)bbbbB
           else
           {
             currCSize += m_PatternLength[5];
+            m_stat->UpdatePattern((int)CPACKPattern::MMMX);
           }
         }
         // pattern mmxx (1100)bbbbBB
         else
         {
           currCSize += m_PatternLength[3];
+          m_stat->UpdatePattern((int)CPACKPattern::MMXX);
         }
         found = true;
         break;
@@ -84,10 +91,12 @@ unsigned CPACK::CompressLine(std::vector<uint8_t> &dataLine)
       uint8_t *popEntry = m_Dictionary.front();
       m_Dictionary.pop_front();
       delete[] popEntry;
+
+      m_stat->UpdatePattern((int)CPACKPattern::XXXX);
     }
   }
 
-  m_Stat->Update(uncompSize, currCSize);
+  m_stat->Update(uncompSize, currCSize);
   return currCSize;
 }
 

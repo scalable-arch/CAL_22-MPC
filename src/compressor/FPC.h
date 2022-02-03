@@ -5,6 +5,7 @@
 #include "CompResult.h"
 
 #define PREFIX_SIZE 3
+#define NUM_FPC_PATTERN 8
 
 namespace comp
 {
@@ -25,7 +26,7 @@ struct FPCResult : public CompResult
 {
   /*** constructors ***/
   FPCResult(unsigned lineSize)
-    : CompResult(lineSize), TotalWords(0), Counts(8, 0) {};
+    : CompResult(lineSize), TotalWords(0), Counts(NUM_FPC_PATTERN, 0) {};
 
   virtual void Update(unsigned uncompSize, unsigned compSize, int selected)
   {
@@ -58,7 +59,7 @@ struct FPCResult : public CompResult
         // first line
         file << "Workload,Original Size,Compressed Size,Compression Ratio,";
         file << "Total Words,";
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < NUM_FPC_PATTERN; i++)
           file << fmt::format("Prefix{},", i);
         file << std::endl;
         file.close();

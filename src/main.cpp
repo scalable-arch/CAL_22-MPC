@@ -146,6 +146,18 @@ int main(int argc, char **argv)
     stat->Print(workloadName, compOutputSavePath);
     stat->PrintDetail(workloadName, compDetailedOutputSavePath);
   }
+  else if (algorithm == "CPACK")
+  {
+    comp::CPACKResult *stat = static_cast<comp::CPACKResult*>(compStat);
+    stat->Print(workloadName, compOutputSavePath);
+    stat->PrintDetail(workloadName, compDetailedOutputSavePath);
+  }
+  else if (algorithm == "BPC")
+  {
+    comp::BPCResult *stat = static_cast<comp::BPCResult*>(compStat);
+    stat->Print(workloadName, compOutputSavePath);
+    stat->PrintDetail(workloadName, compDetailedOutputSavePath);
+  }
   else if (algorithm == "PATTERN")
   {
     comp::PatternResult *stat = static_cast<comp::PatternResult*>(compStat);

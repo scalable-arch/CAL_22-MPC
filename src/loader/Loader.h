@@ -7,7 +7,7 @@
 #include <string>
 
 #define WORD_SIZE uint8_t
-#define ACCESS_GRAN 32
+#define ACCESS_GRAN 64
 
 typedef uint64_t addr_t;
 

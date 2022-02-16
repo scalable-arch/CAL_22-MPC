@@ -62,3 +62,18 @@ for dataset in $dataset_dir/*.txt; do
     $cmd -a $algorithm -i $dataset -c $config -o $output_dir/
   fi
 done
+
+# npy files
+for dataset in $dataset_dir/*.npy; do
+  if [ ! -f $dataset ]; then
+    break
+  fi
+  dataset_name=${dataset##*/}
+  dataset_name=${dataset_name%.npy*}
+  echo "$split : $dataset_name"
+  if [ "$config" == "" ]; then
+    $cmd -a $algorithm -i $dataset -o $output_dir/
+  else
+    $cmd -a $algorithm -i $dataset -c $config -o $output_dir/
+  fi
+done

@@ -8,14 +8,15 @@
 #include <fmt/core.h>
 
 #include "../utils.h"
+#include "../loader/Loader.h"
 
-#define BYTE 8
-#define BYTEMAX  0xff
-#define BYTE2MAX 0xffff
-#define BYTE4MAX 0xffffffff
-#define BYTE8MAX 0xffffffffffffffff
+#define BYTE (8)
+#define BYTEMAX  (0xff)
+#define BYTE2MAX (0xffff)
+#define BYTE4MAX (0xffffffff)
+#define BYTE8MAX (0xffffffffffffffff)
 
-#define COMPSIZELIMIT 280
+#define COMPSIZELIMIT ((ACCESS_GRAN * BYTE) + 32)
 
 namespace comp
 {

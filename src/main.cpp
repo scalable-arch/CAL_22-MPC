@@ -21,6 +21,7 @@
 #define REQ_SIZE 64
 
 comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loader);
+void viewLines(trace::Loader *loader);
 
 int main(int argc, char **argv)
 {
@@ -34,7 +35,7 @@ int main(int argc, char **argv)
   cxxopts::Options options("Compressor");
 
   options.add_options()
-    ("a,algorithm", "Compression algorithm [VPC/FPC/BDI/BPC/CPACK/PATTERN]. Default=VPC", cxxopts::value<std::string>())
+    ("a,algorithm", "Compression algorithm [VPC/FPC/BDI/BPC/CPACK/PATTERN/VIEWER]. Default=VPC", cxxopts::value<std::string>())
     ("i,input",     "Input GPGPU-Sim trace file path. Supported extensions: .log, .npy", cxxopts::value<std::string>())
     ("c,config",    "Config file path (.json).", cxxopts::value<std::string>())
     ("o,output",    "Output directory path", cxxopts::value<std::string>())
@@ -94,6 +95,11 @@ int main(int argc, char **argv)
     compressor = new comp::CPACK(lineSize);
   else if (algorithm == "PATTERN")
     compressor = new comp::Pattern(lineSize);
+  else if (algorithm == "VIEWER")
+  {
+    viewLines(loader);
+    return 0;
+  }
   else
     assert(false && "Invalid name of algorithm.");
 
@@ -218,4 +224,46 @@ comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loa
   return compStat;
 }
 
+void viewLines(trace::Loader *loader)
+{
+  trace::MemReq_t *memReq;
+  if (dynamic_cast<trace::gpgpusim::LoaderGPGPU*>(loader) != nullptr)
+  {
+    memReq = new trace::gpgpusim::MemReqGPU_t;
+
+    // compress
+    while (1)
+    {
+      memReq = loader->GetCacheline(memReq);
+      if (memReq->isEnd) break;
+      if (!(static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_R
+            || static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_W))
+        continue;
+      std::vector<uint8_t> &dataLine = memReq->data;
+
+      for (int i = 0; i < dataLine.size(); i++)
+        printf("%02x ", dataLine[i]);
+      printf("\n");
+    }
+  }
+  else
+  {
+    if (dynamic_cast<trace::apsim::LoaderGPGPU*>(loader) != nullptr)
+      memReq = new trace::apsim::MemReqGPU_t;
+    else if (dynamic_cast<trace::LoaderNPY*>(loader) != nullptr)
+      memReq = new trace::MemReq_t;
+
+    // compress
+    while (1)
+    {
+      memReq = loader->GetCacheline(memReq);
+      if (memReq->isEnd) break;
+      std::vector<uint8_t> &dataLine = memReq->data;
+
+      for (int i = 0; i < dataLine.size(); i++)
+        printf("%02x ", dataLine[i]);
+      printf("\n");
+    }
+  }
+}
 

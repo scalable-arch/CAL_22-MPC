@@ -236,11 +236,19 @@ void viewLines(trace::Loader *loader)
     {
       memReq = loader->GetCacheline(memReq);
       if (memReq->isEnd) break;
+      std::vector<uint8_t> &dataLine = memReq->data;
+      std::string rw;
+
       if (!(static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_R
             || static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_W))
         continue;
-      std::vector<uint8_t> &dataLine = memReq->data;
+      if (static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_R)
+        rw = "R";
+      else if (static_cast<trace::gpgpusim::MemReqGPU_t*>(memReq)->reqType == trace::gpgpusim::GLOBAL_ACC_W)
+        rw = "W";
 
+
+      std::cout << rw << ": ";
       for (int i = 0; i < dataLine.size(); i++)
         printf("%02x ", dataLine[i]);
       printf("\n");

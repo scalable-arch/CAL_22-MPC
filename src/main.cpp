@@ -11,6 +11,7 @@
 #include "compressor/FPC.h"
 #include "compressor/BDI.h"
 #include "compressor/CPACK.h"
+#include "compressor/SC2.h"
 #include "compressor/Pattern.h"
 #include "compressor/BPC.h"
 
@@ -18,7 +19,7 @@
 #include "loader/LoaderNPY.h"
 
 //#define REQ_SIZE (ACCESS_GRAN*2)
-#define REQ_SIZE 64
+#define REQ_SIZE 32
 
 comp::CompResult* compressLines(comp::Compressor *compressor, trace::Loader *loader);
 void viewLines(trace::Loader *loader);
@@ -35,7 +36,7 @@ int main(int argc, char **argv)
   cxxopts::Options options("Compressor");
 
   options.add_options()
-    ("a,algorithm", "Compression algorithm [VPC/FPC/BDI/BPC/CPACK/PATTERN/VIEWER]. Default=VPC", cxxopts::value<std::string>())
+    ("a,algorithm", "Compression algorithm [VPC/FPC/BDI/BPC/CPACK/SC2/PATTERN/VIEWER]. Default=VPC", cxxopts::value<std::string>())
     ("i,input",     "Input GPGPU-Sim trace file path. Supported extensions: .log, .npy", cxxopts::value<std::string>())
     ("c,config",    "Config file path (.json).", cxxopts::value<std::string>())
     ("o,output",    "Output directory path", cxxopts::value<std::string>())
@@ -93,6 +94,8 @@ int main(int argc, char **argv)
     compressor = new comp::BPC(lineSize);
   else if (algorithm == "CPACK")
     compressor = new comp::CPACK(lineSize);
+  else if (algorithm == "SC2")
+    compressor = new comp::SC2(lineSize);
   else if (algorithm == "PATTERN")
     compressor = new comp::Pattern(lineSize);
   else if (algorithm == "VIEWER")

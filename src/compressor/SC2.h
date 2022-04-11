@@ -13,6 +13,9 @@
 #include "CompResult.h"
 #include "Compressor.h"
 
+#define SC2_ENTRIES 1000
+#define WARM_UP_CNT 10000000
+
 namespace comp
 {
 namespace huffman
@@ -89,7 +92,7 @@ class SC2 : public Compressor
 {
 public:
   /*** constructor ***/
-  SC2(unsigned lineSize, const unsigned warmupCnt = 1000000)
+  SC2(unsigned lineSize, unsigned warmupCnt = 100000)
     : m_samplingCnt(0), m_maxSamplingCnt(warmupCnt)
   {
     m_Stat = new CompResult(lineSize);
@@ -99,10 +102,11 @@ public:
   }
 
   virtual unsigned CompressLine(std::vector<uint8_t> &dataLine);
+  void SetSamplingCnt(unsigned cnt);
 
 private:
   unsigned m_samplingCnt;
-  const unsigned m_maxSamplingCnt;
+  unsigned m_maxSamplingCnt;
 
   std::map<int64_t, uint64_t> *mp_symFreqMap;
   std::map<int64_t, std::string> m_huffmanCodes;

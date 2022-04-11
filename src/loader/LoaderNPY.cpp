@@ -39,6 +39,12 @@ unsigned LoaderNPY::GetCachelineSize()
   return lineSize;
 }
 
+unsigned long long LoaderNPY::GetNumLines()
+{
+  unsigned long long numLines = m_DataShape[0];
+  return numLines;
+}
+
 void LoaderNPY::Reset()
 {
   bool fortran_order;

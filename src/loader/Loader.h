@@ -76,6 +76,7 @@ public:
 	/*** getters ***/
 	virtual MemReq_t* GetCacheline(MemReq_t *) = 0;
   virtual unsigned GetCachelineSize() = 0;
+  virtual unsigned long long GetNumLines() = 0;
 
 	/*** methods ***/
 	virtual void Reset() = 0;

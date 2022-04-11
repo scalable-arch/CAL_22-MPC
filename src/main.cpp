@@ -1,6 +1,7 @@
 #include <fstream>
 #include <ios>
 #include <iostream>
+#include <algorithm>
 #include <cassert>
 
 #include <fmt/core.h>
@@ -85,26 +86,45 @@ int main(int argc, char **argv)
   const unsigned lineSize = loader->GetCachelineSize();
   comp::Compressor *compressor;
   if (algorithm == "VPC")
+  {
     compressor = new comp::VPC(configPath);
+  }
   else if (algorithm == "FPC")
+  {
     compressor = new comp::FPC(lineSize);
+  }
   else if (algorithm == "BDI")
+  {
     compressor = new comp::BDI(lineSize);
+  }
   else if (algorithm == "BPC")
+  {
     compressor = new comp::BPC(lineSize);
+  }
   else if (algorithm == "CPACK")
+  {
     compressor = new comp::CPACK(lineSize);
+  }
   else if (algorithm == "SC2")
-    compressor = new comp::SC2(lineSize);
+  {
+    unsigned long long numLines = loader->GetNumLines();
+    unsigned long long samplingCnts = std::min<unsigned long long>(numLines/10000, WARM_UP_CNT);
+    samplingCnts = std::max<unsigned long long>(10000, samplingCnts);
+    compressor = new comp::SC2(lineSize, samplingCnts);
+  }
   else if (algorithm == "PATTERN")
+  {
     compressor = new comp::Pattern(lineSize);
+  }
   else if (algorithm == "VIEWER")
   {
     viewLines(loader);
     return 0;
   }
   else
+  {
     assert(false && "Invalid name of algorithm.");
+  }
 
   // results file
   std::string saveFileName;

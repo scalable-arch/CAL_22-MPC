@@ -53,6 +53,22 @@ namespace gpgpusim {
     return memReq;
   }
 
+  unsigned long long LoaderGPGPU::GetNumLines()
+  {
+    MemReq_t *memReq = new MemReqGPU_t;
+
+    unsigned long long numLines = 0;
+    while (1)
+    {
+      memReq = GetCacheline(memReq);
+      if (memReq->isEnd) break;
+      numLines++;
+    }
+
+    Reset();
+    return numLines;
+  }
+
   /*** public methods ***/
   void LoaderGPGPU::Reset()
   {
@@ -111,6 +127,21 @@ namespace apsim {
   /*** getters ***/
   MemReq_t* LoaderGPGPU::GetCacheline(MemReq_t *memReq) { return (this->*mp_GetCacheline)(memReq); }
   unsigned LoaderGPGPU::GetCachelineSize() { return m_LineSize; }
+  unsigned long long LoaderGPGPU::GetNumLines()
+  {
+    MemReq_t *memReq = new MemReqGPU_t;
+
+    unsigned long long numLines = 0;
+    while (1)
+    {
+      memReq = GetCacheline(memReq);
+      if (memReq->isEnd) break;
+      numLines++;
+    }
+
+    Reset();
+    return numLines;
+  }
 
   /*** public methods ***/
   bool LoaderGPGPU::ReadLine(DatasetAttr &datasetAttr) { return (this->*mp_ReadLine)(datasetAttr); }

@@ -121,6 +121,9 @@ public:
   // Get a line
   virtual MemReq_t* GetCacheline(MemReq_t *memReq);
 
+  // Get a number of total lines
+  virtual unsigned long long GetNumLines();
+
   /*** methods ***/
   // reset filepointer
   virtual void Reset();
@@ -248,6 +251,9 @@ public:
   /*** public methods ***/
   // Read a line from the file
   bool ReadLine(DatasetAttr &datasetAttr);
+
+  // Get a number of total lines
+  virtual unsigned long long GetNumLines();
 
   // Reset the file pointer
   virtual void Reset();

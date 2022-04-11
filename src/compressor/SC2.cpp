@@ -3,8 +3,7 @@
 #include <sstream>
 #include <utility>
 
-#define HEAP_CAPACITY 1000
-#define WARM_UP_CNT 1000000
+#define HEAP_CAPACITY SC2_ENTRIES
 #define WORD_GRAN 4
 
 namespace comp
@@ -261,6 +260,11 @@ bool cmp(const std::pair<int64_t, uint64_t> &lhs, const std::pair<int64_t, uint6
   return lhs.second < rhs.second;
 }
 
+}
+
+void SC2::SetSamplingCnt(unsigned cnt)
+{
+  m_maxSamplingCnt = cnt;
 }
 
 unsigned SC2::CompressLine(std::vector<uint8_t> &dataLine)

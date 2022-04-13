@@ -13,8 +13,8 @@
 #include "CompResult.h"
 #include "Compressor.h"
 
-#define SC2_ENTRIES 1000
-#define WARM_UP_CNT 10000000
+#define SC2_ENTRIES 1024
+#define WARM_UP_CNT 1000000
 
 namespace comp
 {

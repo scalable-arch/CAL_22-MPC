@@ -108,7 +108,7 @@ int main(int argc, char **argv)
   else if (algorithm == "SC2")
   {
     unsigned long long numLines = loader->GetNumLines();
-    unsigned long long samplingCnts = std::min<unsigned long long>(numLines/10000, WARM_UP_CNT);
+    unsigned long long samplingCnts = std::min<unsigned long long>(numLines/100, WARM_UP_CNT);
     samplingCnts = std::max<unsigned long long>(10000, samplingCnts);
     compressor = new comp::SC2(lineSize, samplingCnts);
   }
